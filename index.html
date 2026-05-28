@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
-<title>Flip7 翻转七 v4</title>
+<title>Flip7 翻转七 v5</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--pri:#6c5ce7;--pri2:#a29bfe;--red:#e74c3c;--grn:#27ae60;--ylw:#f39c12;--bg:#1a1a2e;--bg2:#16213e;--bg3:#0f3460;--txt:#eee;--dim:#aaa;--r:12px}
@@ -66,7 +66,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .tl{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
 .tb{padding:14px 20px;border-radius:var(--r);background:var(--bg2);border:2px solid var(--bg3);color:var(--txt);font-size:15px;cursor:pointer;transition:all .2s}
 .tb:hover{border-color:var(--pri);background:var(--bg3)}
-.glog{width:100%;max-width:700px;background:var(--bg2);border-radius:var(--r);padding:10px;max-height:100px;overflow-y:auto}
+.glog{width:100%;max-width:700px;background:var(--bg2);border-radius:var(--r);padding:10px;max-height:160px;overflow-y:auto}
 .le{font-size:11px;color:var(--dim);padding:2px 0;border-bottom:1px solid rgba(255,255,255,.05)}
 .le:last-child{border:none}.le.ex{color:var(--red)}.le.ok{color:var(--grn)}.le.ac{color:var(--pri2)}
 #roundEnd,#gameEnd{justify-content:center;gap:20px;text-align:center}
@@ -112,7 +112,7 @@ G.deck=shuf(mkDeck());G.disc=[];G.round=0;G.dealer=0;G.totalR=0;G.mult=1;G.log=[
 
 function newRound(){G.round++;G.roundRaised=false;G.f3r=0;G.f3t=-1;G.pending=[];
 G.players.forEach(p=>{p.hand=[];p.bonus=[];p.rscore=0;p.status='active';p.safe=false});
-G.log=[];log('=== 第'+G.round+'回合开始 ===');log('庄家: '+G.players[G.dealer].name);
+log('');log('=== 第'+G.round+'回合开始 ===');log('庄家: '+G.players[G.dealer].name);
 S('game');chkRaise()}
 
 function procPend(){if(!G.pending.length){if(!chkEnd())advance();return}let a=G.pending.shift();handleAction(a.c,a.pi)}
@@ -162,17 +162,17 @@ aa='<button class="btn bp" onclick="doHit()">翻牌</button><button class="btn b
 document.getElementById('aa').innerHTML=aa;
 
 // Log
-let lg='';G.log.slice(-15).forEach(l=>{lg+='<div class="le '+(l.cls||'')+'">'+l.t+'</div>'});
+let lg='';G.log.forEach(l=>{lg+='<div class="le '+(l.cls||'')+'">'+l.t+'</div>'});
 document.getElementById('glog').innerHTML=lg;document.getElementById('glog').scrollTop=99999}
 
-function rcard(c){if(c.t==='n')return'<div class="cd cn">'+c.v+'</div>';if(c.t==='b')return'<div class="cd cb">'+c.v+'</div>';
+function rcard(c){if(c.xx)return'<div class="cd cn" style="border:2px solid var(--red);box-shadow:0 0 10px var(--red);opacity:.8">'+c.v+'</div>';if(c.t==='n')return'<div class="cd cn">'+c.v+'</div>';if(c.t==='b')return'<div class="cd cb">'+c.v+'</div>';
 let sc=c.v==='freeze'?'fr':c.v==='flip3'?'f3':'sf';return'<div class="cd ca '+sc+'">'+cname(c)+'</div>'}
 
 function calcScoreLive(p){if(p.status==='busted')return 0;let ns=0;p.hand.forEach(c=>{if(c.t==='n')ns+=c.v});
 let mul=1,ba=0;p.bonus.forEach(b=>{if(b.v==='x2')mul*=2;else ba+=parseInt(b.v)});return ns*mul+ba}
 
 function doHit(){let c=draw();if(!c){log('牌堆空！');endRound();return}let p=G.players[G.cur];log(p.name+' 翻牌: '+cdisp(c));
-if(c.t==='n'){if(p.hand.some(x=>x.t==='n'&&x.v===c.v)){if(p.safe){p.safe=false;log(p.name+' 翻出重复['+c.v+']！安全牌生效，避免爆炸','ok');render();setTimeout(()=>advance(),800);return}
+if(c.t==='n'){if(p.hand.some(x=>x.t==='n'&&x.v===c.v)){if(p.safe){p.hand.push({t:'n',v:c.v,xx:true});log(p.name+' 翻出重复['+c.v+']！','ex');render();setTimeout(()=>{p.hand.pop();p.safe=false;log('✔ 安全牌生效，避免爆炸！','ok');render();setTimeout(()=>advance(),600)},1000);return}
 p.status='busted';log(p.name+' 爆炸！重复['+c.v+']','ex');p.hand=[];p.bonus=[];render();setTimeout(()=>advance(),500);return}
 p.hand.push(c);if(uniq(p).length>=7){log(p.name+' 七连翻！+15分！','ok');render();setTimeout(()=>endRound(G.cur),600);return}}
 else if(c.t==='b'){p.bonus.push(c)}else{handleAction(c,G.cur);return}render();advance()}
@@ -182,7 +182,7 @@ function doStay(){let p=G.players[G.cur];p.status='stayed';log(p.name+' 停牌',
 function autoF3(){if(G.f3r<=0){if(G.pending.length){setTimeout(procPend,300)}else{advance()}return}
 let c=draw();if(!c){G.f3r=0;log('牌堆空');render();advance();return}let p=G.players[G.f3t];
 log('[翻三张] '+p.name+' 翻出: '+cdisp(c));G.f3r--;
-if(c.t==='n'){if(p.hand.some(x=>x.t==='n'&&x.v===c.v)){if(p.safe){p.safe=false;log(p.name+' 翻出重复['+c.v+']！安全牌生效，避免爆炸','ok');render();setTimeout(autoF3,800)}
+if(c.t==='n'){if(p.hand.some(x=>x.t==='n'&&x.v===c.v)){if(p.safe){p.hand.push({t:'n',v:c.v,xx:true});log(p.name+' 翻出重复['+c.v+']！','ex');render();setTimeout(()=>{p.hand.pop();p.safe=false;log('✔ 安全牌生效，避免爆炸！','ok');render();setTimeout(autoF3,800)},1000);return}
 else{p.status='busted';G.f3r=0;log(p.name+' 翻三张中爆炸！','ex');p.hand=[];p.bonus=[];render();setTimeout(()=>advance(),600)}}
 else{p.hand.push(c);if(uniq(p).length>=7){G.f3r=0;log(p.name+' 翻三张达成七连翻！','ok');render();setTimeout(()=>endRound(G.f3t),600)}
 else{render();setTimeout(autoF3,800)}}}
