@@ -82,7 +82,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 <body>
 <div id="home" class="scr act"><div><div class="logo">FLIP 7</div><div class="sub">翻转七 · 推测运气卡牌游戏</div></div><div class="rbox"><h3>游戏规则</h3><ul><li>2-6 人轮流翻牌，收集不同数值卡牌获取积分</li><li>翻到重复数值 → 爆炸出局，本回合 0 分</li><li>集齐 7 张不同数值 → 七连翻 +15 分</li><li>功能牌：冻结、翻三张、安全牌</li><li>庄家每回合可加注一次（全局最多3次）</li><li>率先累计 200 分获胜！</li></ul></div><button class="btn bp bl" onclick="S('setup')">开始游戏</button></div>
 <div id="setup" class="scr"><div class="stit">游戏设置</div><p style="color:var(--dim)">选择玩家人数</p><div class="pcnt" id="pcb"></div><div class="ninp" id="ni"></div><button class="btn bp bl" onclick="startGame()">开始游戏</button><button class="btn bo" onclick="S('home')">返回</button></div>
-<div id="game" class="scr"><div class="ghdr" id="gh"></div><div class="turn-info" id="ti"></div><div class="players-area" id="pa"></div><div class="aa" id="aa"></div><div class="glog" id="glog"></div></div>
+<div id="game" class="scr"><div class="ghdr" id="gh"></div><div class="turn-info" id="ti"></div><div class="players-area" id="pa"></div><div class="aa" id="aa"></div><div class="glog" id="glog"></div><div style="display:flex;gap:10px;margin-top:8px;opacity:.6"><button class="btn bo" style="font-size:12px;padding:6px 14px" onclick="restartSame()">重开本局</button><button class="btn bo" style="font-size:12px;padding:6px 14px" onclick="backToSetup()">返回房间</button></div></div>
 <div id="roundEnd" class="scr"><h2 id="ret"></h2><table class="rt" id="rrt"></table><button class="btn bp bl" onclick="nextRound()">下一回合</button></div>
 <div id="gameEnd" class="scr"><div class="crown">👑</div><div class="ftit" id="wn"></div><p style="color:var(--dim)" id="ws"></p><table class="rt" id="frt"></table><div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center"><button class="btn bp bl" onclick="restartSame()">再来一局</button><button class="btn bo" onclick="S('home')">返回首页</button></div></div>
 <script>
@@ -239,6 +239,7 @@ sorted.forEach((p,i)=>{let cls=i===0?'wr':'',ct=p._bc>=0?'+'+p._bc:''+p._bc,cc=p
 h+='<tr class="'+cls+'"><td>'+(i+1)+'</td><td>'+p.name+'</td><td>'+p.total+'</td><td><span class="bc '+cc+'">'+ct+'</span> (余'+p.beans+')</td><td>'+(p._bk?'💸 破产':'')+'</td></tr>'});
 h+='</tbody>';document.getElementById('frt').innerHTML=h;S('gameEnd')}
 
+function backToSetup(){G.locked=false;S('setup')}
 function restartSame(){G.players.forEach(p=>{p.total=0;p.rscore=0;p.hand=[];p.bonus=[];p.beans=BEANS-ANTE;p.status='active';p.safe=false});
 G.deck=shuf(mkDeck());G.disc=[];G.round=0;G.dealer=0;G.totalR=0;G.mult=1;G.log=[];G.pending=[];newRound()}
 function addCard(idx,c){let p=G.players[idx];if(c.t==='n')p.hand.push(c);else if(c.t==='b')p.bonus.push(c)}
