@@ -115,17 +115,12 @@ G.players.forEach(p=>{p.hand=[];p.bonus=[];p.rscore=0;p.status='active';p.safe=f
 G.log=[];log('=== 第'+G.round+'回合开始 ===');log('庄家: '+G.players[G.dealer].name);
 S('game');chkRaise()}
 
-function dealInit(){for(let i=0;i<G.players.length;i++){let idx=(G.dealer+i)%G.players.length;let c=draw();
-if(!c){endRound();return}if(c.t==='a'){G.pending.push({c,pi:idx});log(G.players[idx].name+'发牌得到【'+cname(c)+'】待结算','ac')}
-else{addCard(idx,c);log(G.players[idx].name+'初始牌: '+cdisp(c))}}
-render();if(G.pending.length){setTimeout(procPend,400)}else{setTimeout(startTurns,400)}}
+function procPend(){if(!G.pending.length){if(!chkEnd())advance();return}let a=G.pending.shift();handleAction(a.c,a.pi)}
+function chkRaise(){if(G.totalR<MAXR&&!G.roundRaised){G.phase='raise';render()}else{startTurns()}}
 
-function procPend(){if(!G.pending.length){startTurns();return}let a=G.pending.shift();handleAction(a.c,a.pi)}
-function chkRaise(){if(G.totalR<MAXR&&!G.roundRaised){G.phase='raise';render()}else{dealPhase()}}
+function doRaise(){G.roundRaised=true;G.totalR++;G.mult*=2;log('庄家加注！底注倍率→x'+G.mult,'ac');startTurns()}
+function skipRaise(){startTurns()}
 
-function doRaise(){G.roundRaised=true;G.totalR++;G.mult*=2;log('庄家加注！底注倍率→x'+G.mult,'ac');dealPhase()}
-function skipRaise(){dealPhase()}
-function dealPhase(){G.phase='dealing';render();setTimeout(dealInit,600)}
 function startTurns(){G.cur=G.dealer;G.phase='playing';render()}
 
 function render(){let p=G.players[G.cur];
@@ -133,7 +128,7 @@ document.getElementById('gh').innerHTML='<div class="gi"><span class="gl2">回�
 
 // Turn info
 let ti='';
-if(G.phase==='dealing'){ti='发牌中...';}
+if(G.phase==='dealing'){ti='准备中...';}
 else if(G.phase==='raise'){ti='✨ <span class="highlight">'+G.players[G.dealer].name+'</span>，本回合你是庄家，可以选择是否加注';}
 else if(G.f3r>0){ti='⚠️ <span class="highlight">'+G.players[G.f3t].name+'</span> 正在被强制翻牌（剩余'+G.f3r+'张）';}
 else{ti='▶ 轮到 <span class="highlight">'+G.players[G.cur].name+'</span> 操作';}
