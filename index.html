@@ -113,18 +113,19 @@ G.deck=shuf(mkDeck());G.disc=[];G.round=0;G.dealer=0;G.totalR=0;G.mult=1;G.log=[
 function newRound(){G.round++;G.roundRaised=false;G.f3r=0;G.f3t=-1;G.pending=[];
 G.players.forEach(p=>{p.hand=[];p.bonus=[];p.rscore=0;p.status='active';p.safe=false});
 G.log=[];log('=== 第'+G.round+'回合开始 ===');log('庄家: '+G.players[G.dealer].name);
-G.phase='dealing';S('game');render();setTimeout(dealInit,600)}
+S('game');chkRaise()}
 
 function dealInit(){for(let i=0;i<G.players.length;i++){let idx=(G.dealer+i)%G.players.length;let c=draw();
 if(!c){endRound();return}if(c.t==='a'){G.pending.push({c,pi:idx});log(G.players[idx].name+'发牌得到【'+cname(c)+'】待结算','ac')}
 else{addCard(idx,c);log(G.players[idx].name+'初始牌: '+cdisp(c))}}
-render();if(G.pending.length){setTimeout(procPend,400)}else{setTimeout(chkRaise,400)}}
+render();if(G.pending.length){setTimeout(procPend,400)}else{setTimeout(startTurns,400)}}
 
-function procPend(){if(!G.pending.length){chkRaise();return}let a=G.pending.shift();handleAction(a.c,a.pi)}
-function chkRaise(){if(G.totalR<MAXR&&!G.roundRaised){G.phase='raise';render()}else{startTurns()}}
+function procPend(){if(!G.pending.length){startTurns();return}let a=G.pending.shift();handleAction(a.c,a.pi)}
+function chkRaise(){if(G.totalR<MAXR&&!G.roundRaised){G.phase='raise';render()}else{dealPhase()}}
 
-function doRaise(){G.roundRaised=true;G.totalR++;G.mult*=2;log('庄家加注！底注倍率→x'+G.mult,'ac');startTurns()}
-function skipRaise(){startTurns()}
+function doRaise(){G.roundRaised=true;G.totalR++;G.mult*=2;log('庄家加注！底注倍率→x'+G.mult,'ac');dealPhase()}
+function skipRaise(){dealPhase()}
+function dealPhase(){G.phase='dealing';render();setTimeout(dealInit,600)}
 function startTurns(){G.cur=G.dealer;G.phase='playing';render()}
 
 function render(){let p=G.players[G.cur];
@@ -197,7 +198,7 @@ if(c.v==='freeze'){showTarget('冻结：选择一名玩家强制停牌',act,(ti)
 else if(c.v==='flip3'){showTarget('翻三张：选择一名玩家强制翻3张',act,(ti)=>{log(G.players[from].name+' 对 '+G.players[ti].name+' 使用翻三张','ac');G.f3r=3;G.f3t=ti;render()})}
 else if(c.v==='safety'){showTarget('安全牌：选择一名玩家获得豁免',act,(ti)=>{G.players[ti].safe=true;log(G.players[from].name+' 对 '+G.players[ti].name+' 使用安全牌','ac');render();afterAct()})}}
 
-function afterAct(){if(G.pending.length){setTimeout(procPend,300)}else if(G.phase==='playing'){if(!chkEnd())advance()}else{chkRaise()}}
+function afterAct(){if(G.pending.length){setTimeout(procPend,300)}else if(G.phase==='playing'){if(!chkEnd())advance()}else{startTurns()}}
 
 function showTarget(title,targets,cb){let ov=document.createElement('div');ov.className='ov';ov.id='tov';
 let b='';targets.forEach(t=>{b+='<button class="tb" data-idx="'+t.idx+'">'+t.name+'</button>'});
