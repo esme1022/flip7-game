@@ -88,7 +88,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 <script>
 const WIN=200,BEANS=5000,ANTE=100,MAXR=3;
 const PR={2:[1],3:[.6,.4],4:[.5,.3,.2],5:[.4,.3,.2,.1],6:[.4,.3,.2,.07,.03]};
-let G={players:[],deck:[],disc:[],round:0,cur:0,dealer:0,roundRaised:false,totalR:0,mult:1,phase:'setup',log:[],pending:[],f3r:0,f3t:-1};
+let G={players:[],deck:[],disc:[],round:0,cur:0,dealer:0,roundRaised:false,totalR:0,mult:1,phase:'setup',log:[],pending:[],f3r:0,f3t:-1,locked:false};
 let pcount=4;
 
 function mkDeck(){let d=[];for(let v=0;v<=12;v++){let n=Math.max(1,v);for(let i=0;i<n;i++)d.push({t:'n',v})}
@@ -121,7 +121,7 @@ function chkRaise(){if(G.totalR<MAXR&&!G.roundRaised){G.phase='raise';render()}e
 function doRaise(){G.roundRaised=true;G.totalR++;G.mult*=2;log('庄家加注！底注倍率→x'+G.mult,'ac');startTurns()}
 function skipRaise(){startTurns()}
 
-function startTurns(){G.cur=G.dealer;G.phase='playing';render()}
+function startTurns(){G.locked=false;G.cur=G.dealer;G.phase='playing';render()}
 
 function render(){let p=G.players[G.cur];
 let pot=G.players.length*ANTE*G.mult;document.getElementById('gh').innerHTML='<div class="gi"><span class="gl2">回合</span><span class="gv">'+G.round+'</span></div><div class="gi"><span class="gl2">底注</span><span class="gv">'+ANTE+'豆</span></div><div class="gi"><span class="gl2">当前奖池</span><span class="gv">'+pot+'豆</span></div><div class="gi"><span class="gl2">加注剩余</span><span class="gv">'+(MAXR-G.totalR)+'次</span></div>';
@@ -171,13 +171,13 @@ let sc=c.v==='freeze'?'fr':c.v==='flip3'?'f3':'sf';return'<div class="cd ca '+sc
 function calcScoreLive(p){if(p.status==='busted')return 0;let ns=0;p.hand.forEach(c=>{if(c.t==='n')ns+=c.v});
 let mul=1,ba=0;p.bonus.forEach(b=>{if(b.v==='x2')mul*=2;else ba+=parseInt(b.v)});return ns*mul+ba}
 
-function doHit(){let c=draw();if(!c){log('牌堆空！');endRound();return}let p=G.players[G.cur];log(p.name+' 翻牌: '+cdisp(c));
+function doHit(){if(G.locked)return;G.locked=true;let c=draw();if(!c){log('牌堆空！');endRound();return}let p=G.players[G.cur];log(p.name+' 翻牌: '+cdisp(c));
 if(c.t==='n'){if(p.hand.some(x=>x.t==='n'&&x.v===c.v)){if(p.safe){p.hand.push({t:'n',v:c.v,xx:true});log(p.name+' 翻出重复['+c.v+']！','ex');render();setTimeout(()=>{p.hand.pop();p.safe=false;log('✔ 安全牌生效，避免爆炸！','ok');render();setTimeout(()=>advance(),600)},1000);return}
 p.hand.forEach(x=>{if(x.t==='n'&&x.v===c.v)x.xx=true});p.hand.push({t:'n',v:c.v,xx:true});log(p.name+' 翻出重复['+c.v+']！','ex');render();setTimeout(()=>{p.status='busted';log(p.name+' 💥 爆炸！','ex');p.hand=[];p.bonus=[];render();setTimeout(()=>advance(),600)},1200);return}
 p.hand.push(c);if(uniq(p).length>=7){log(p.name+' 七连翻！+15分！','ok');render();setTimeout(()=>endRound(G.cur),600);return}}
 else if(c.t==='b'){p.bonus.push(c)}else{handleAction(c,G.cur);return}render();advance()}
 
-function doStay(){let p=G.players[G.cur];p.status='stayed';log(p.name+' 停牌','ok');render();advance()}
+function doStay(){if(G.locked)return;G.locked=true;let p=G.players[G.cur];p.status='stayed';log(p.name+' 停牌','ok');render();advance()}
 
 function autoF3(){if(G.f3r<=0){if(G.pending.length){setTimeout(procPend,300)}else{advance()}return}
 let c=draw();if(!c){G.f3r=0;log('牌堆空');render();advance();return}let p=G.players[G.f3t];
@@ -198,13 +198,13 @@ else if(c.v==='safety'){showTarget('【'+who+'】使用安全牌：选择一名�
 
 function afterAct(){if(G.pending.length){setTimeout(procPend,300)}else if(G.phase==='playing'){if(!chkEnd())advance()}else{startTurns()}}
 
-function showTarget(title,targets,cb){let ov=document.createElement('div');ov.className='ov';ov.id='tov';
+function showTarget(title,targets,cb){G.locked=false;let ov=document.createElement('div');ov.className='ov';ov.id='tov';
 let b='';targets.forEach(t=>{b+='<button class="tb" data-idx="'+t.idx+'">'+t.name+'</button>'});
 ov.innerHTML='<h3>'+title+'</h3><div class="tl">'+b+'</div>';document.body.appendChild(ov);
 ov.querySelectorAll('.tb').forEach(btn=>{btn.onclick=()=>{rmOv('tov');cb(parseInt(btn.dataset.idx))}})}
 function rmOv(id){let e=document.getElementById(id);if(e)e.remove()}
 
-function advance(){if(chkEnd())return;let next=(G.cur+1)%G.players.length,att=0;
+function advance(){G.locked=false;if(chkEnd())return;let next=(G.cur+1)%G.players.length,att=0;
 while(G.players[next].status!=='active'&&att<G.players.length){next=(next+1)%G.players.length;att++}
 if(att>=G.players.length){endRound();return}G.cur=next;render()}
 
