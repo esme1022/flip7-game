@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
-<title>Flip7 翻转七</title>
+<title>Flip7 翻转七 v3</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--pri:#6c5ce7;--pri2:#a29bfe;--red:#e74c3c;--grn:#27ae60;--ylw:#f39c12;--bg:#1a1a2e;--bg2:#16213e;--bg3:#0f3460;--txt:#eee;--dim:#aaa;--r:12px}
@@ -124,7 +124,7 @@ function skipRaise(){startTurns()}
 function startTurns(){G.cur=G.dealer;G.phase='playing';render()}
 
 function render(){let p=G.players[G.cur];
-document.getElementById('gh').innerHTML='<div class="gi"><span class="gl2">回合</span><span class="gv">'+G.round+'</span></div><div class="gi"><span class="gl2">牌堆</span><span class="gv">'+G.deck.length+'</span></div><div class="gi"><span class="gl2">底注倍率</span><span class="gv">x'+G.mult+'</span></div><div class="gi"><span class="gl2">加注剩余</span><span class="gv">'+(MAXR-G.totalR)+'</span></div>';
+let pot=G.players.length*ANTE*G.mult;document.getElementById('gh').innerHTML='<div class="gi"><span class="gl2">回合</span><span class="gv">'+G.round+'</span></div><div class="gi"><span class="gl2">底注</span><span class="gv">'+ANTE+'豆</span></div><div class="gi"><span class="gl2">当前奖池</span><span class="gv">'+pot+'豆</span></div><div class="gi"><span class="gl2">加注剩余</span><span class="gv">'+(MAXR-G.totalR)+'次</span></div>';
 
 // Turn info
 let ti='';
@@ -139,7 +139,7 @@ let pa='';G.players.forEach((pl,i)=>{
 let cls='player-box';if(i===G.cur&&G.phase==='playing')cls+=' current';if(pl.status==='stayed')cls+=' stayed';if(pl.status==='busted')cls+=' busted';
 pa+='<div class="'+cls+'"><div class="pname"><span>'+pl.name+(i===G.dealer?' 🎲':'')+'</span>';
 if(i===G.cur&&G.phase==='playing')pa+='<span class="badge">当前</span>';
-pa+='</div><div class="pscore">累计:'+pl.total+'分 | 本回合:'+calcScoreLive(pl)+'分</div><div class="pcards">';
+pa+='</div><div class="pscore">累计:'+pl.total+'分 | 本回合:'+calcScoreLive(pl)+'分 | 豆:'+pl.beans+'</div><div class="pcards">';
 pl.hand.forEach(c=>{pa+=rcard(c)});
 if(!pl.hand.length&&pl.status==='active')pa+='<span style="color:var(--dim);font-size:10px">暂无</span>';
 pa+='</div><div class="ptags">';
@@ -189,7 +189,7 @@ render();if(G.f3r<=0){if(G.pending.length){setTimeout(procPend,300)}else{advance
 
 function handleAction(c,from){let act=G.players.map((p,i)=>({name:p.name,idx:i})).filter(x=>G.players[x.idx].status==='active');
 if(!act.length){afterAct();return}
-if(c.v==='freeze'){showTarget('冻结：选择一名玩家强制停牌',act,(ti)=>{G.players[ti].status='stayed';log(G.players[from].name+' 对 '+G.players[ti].name+' 使用冻结','ac');render();afterAct()})}
+if(c.v==='freeze'){let fAct=act.filter(x=>x.idx!==from);if(!fAct.length){afterAct();return}showTarget('冻结：选择一名其他玩家强制停牌',fAct,(ti)=>{G.players[ti].status='stayed';log(G.players[from].name+' 对 '+G.players[ti].name+' 使用冻结','ac');render();afterAct()})}
 else if(c.v==='flip3'){showTarget('翻三张：选择一名玩家强制翻3张',act,(ti)=>{log(G.players[from].name+' 对 '+G.players[ti].name+' 使用翻三张','ac');G.f3r=3;G.f3t=ti;render()})}
 else if(c.v==='safety'){showTarget('安全牌：选择一名玩家获得豁免',act,(ti)=>{G.players[ti].safe=true;log(G.players[from].name+' 对 '+G.players[ti].name+' 使用安全牌','ac');render();afterAct()})}}
 
