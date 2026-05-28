@@ -173,7 +173,7 @@ let mul=1,ba=0;p.bonus.forEach(b=>{if(b.v==='x2')mul*=2;else ba+=parseInt(b.v)})
 
 function doHit(){let c=draw();if(!c){log('牌堆空！');endRound();return}let p=G.players[G.cur];log(p.name+' 翻牌: '+cdisp(c));
 if(c.t==='n'){if(p.hand.some(x=>x.t==='n'&&x.v===c.v)){if(p.safe){p.hand.push({t:'n',v:c.v,xx:true});log(p.name+' 翻出重复['+c.v+']！','ex');render();setTimeout(()=>{p.hand.pop();p.safe=false;log('✔ 安全牌生效，避免爆炸！','ok');render();setTimeout(()=>advance(),600)},1000);return}
-p.status='busted';log(p.name+' 爆炸！重复['+c.v+']','ex');p.hand=[];p.bonus=[];render();setTimeout(()=>advance(),500);return}
+p.hand.forEach(x=>{if(x.t==='n'&&x.v===c.v)x.xx=true});p.hand.push({t:'n',v:c.v,xx:true});log(p.name+' 翻出重复['+c.v+']！','ex');render();setTimeout(()=>{p.status='busted';log(p.name+' 💥 爆炸！','ex');p.hand=[];p.bonus=[];render();setTimeout(()=>advance(),600)},1200);return}
 p.hand.push(c);if(uniq(p).length>=7){log(p.name+' 七连翻！+15分！','ok');render();setTimeout(()=>endRound(G.cur),600);return}}
 else if(c.t==='b'){p.bonus.push(c)}else{handleAction(c,G.cur);return}render();advance()}
 
@@ -183,7 +183,7 @@ function autoF3(){if(G.f3r<=0){if(G.pending.length){setTimeout(procPend,300)}els
 let c=draw();if(!c){G.f3r=0;log('牌堆空');render();advance();return}let p=G.players[G.f3t];
 log('[翻三张] '+p.name+' 翻出: '+cdisp(c));G.f3r--;
 if(c.t==='n'){if(p.hand.some(x=>x.t==='n'&&x.v===c.v)){if(p.safe){p.hand.push({t:'n',v:c.v,xx:true});log(p.name+' 翻出重复['+c.v+']！','ex');render();setTimeout(()=>{p.hand.pop();p.safe=false;log('✔ 安全牌生效，避免爆炸！','ok');render();setTimeout(autoF3,800)},1000);return}
-else{p.status='busted';G.f3r=0;log(p.name+' 翻三张中爆炸！','ex');p.hand=[];p.bonus=[];render();setTimeout(()=>advance(),600)}}
+else{p.hand.forEach(x=>{if(x.t==='n'&&x.v===c.v)x.xx=true});p.hand.push({t:'n',v:c.v,xx:true});log(p.name+' 翻出重复['+c.v+']！','ex');G.f3r=0;render();setTimeout(()=>{p.status='busted';log(p.name+' 💥 翻三张中爆炸！','ex');p.hand=[];p.bonus=[];render();setTimeout(()=>advance(),600)},1200)}}
 else{p.hand.push(c);if(uniq(p).length>=7){G.f3r=0;log(p.name+' 翻三张达成七连翻！','ok');render();setTimeout(()=>endRound(G.f3t),600)}
 else{render();setTimeout(autoF3,800)}}}
 else if(c.t==='b'){p.bonus.push(c);render();setTimeout(autoF3,800)}
