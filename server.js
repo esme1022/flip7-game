@@ -15,7 +15,7 @@ const PR={2:[1],3:[.6,.4],4:[.5,.3,.2],5:[.4,.3,.2,.1],6:[.4,.3,.2,.07,.03],
   11:[.24,.18,.14,.12,.10,.08,.06,.04,.025,.015],12:[.22,.17,.14,.11,.10,.08,.07,.05,.03,.02,.01]};
 
 let G=null, seats=[], clients=new Set(), roomSize=4, hostSeat=0;
-let turnTimer=null, turnDeadline=0;
+let turnTimer=null, turnDeadline=0, actionLock=false;
 const AI_NAMES=['电脑A','电脑B','电脑C','电脑D','电脑E','电脑F','电脑G','电脑H','电脑I','电脑J','电脑K','电脑L'];
 
 function initState(){
@@ -36,12 +36,12 @@ function uniq(p){let s=new Set();p.hand.forEach(c=>{if(c.t==='n')s.add(c.v)});re
 function calcScore(p,f7){let ns=0;p.hand.forEach(c=>{if(c.t==='n')ns+=c.v});let mul=1,ba=0;p.bonus.forEach(b=>{if(b.v==='x2')mul*=2;else ba+=parseInt(b.v)});return ns*mul+ba+(f7?15:0)}
 function csLive(p){if(p.status==='busted')return 0;let ns=0;p.hand.forEach(c=>{if(c.t==='n')ns+=c.v});let mul=1,ba=0;p.bonus.forEach(b=>{if(b.v==='x2')mul*=2;else ba+=parseInt(b.v)});return ns*mul+ba}
 
-function broadcast(){
+function broadcast(){actionLock=false;
   const state=JSON.stringify({type:'state',G,seats,roomSize,hostSeat});
   clients.forEach(ws=>{if(ws.readyState===1)ws.send(state)});
 }
 
-function isAI(idx){return seats[idx]&&seats[idx].ai}
+function isAI(idx){return seats[idx]&&(seats[idx].ai||seats[idx].dc)}
 
 
 function setTurnTimer(sec){
@@ -118,10 +118,10 @@ function advance(){
 
 function chkEnd(){if(!G.players.some(p=>p.status==='active')){endRound();return true}return false}
 
-function doRaise(){clearTurnTimer();G.roundRaised=true;G.totalR++;G.mult*=2;log('庄家加注！底注倍率→x'+G.mult,'ac');startTurns()}
-function skipRaise(){clearTurnTimer();startTurns()}
+function doRaise(){if(actionLock)return;actionLock=true;clearTurnTimer();G.roundRaised=true;G.totalR++;G.mult*=2;log('庄家加注！底注倍率→x'+G.mult,'ac');startTurns()}
+function skipRaise(){if(actionLock)return;actionLock=true;clearTurnTimer();startTurns()}
 
-function doHit(){clearTurnTimer();
+function doHit(){if(actionLock)return;actionLock=true;clearTurnTimer();
   let c=draw();if(!c){log('牌堆空！');endRound();return}
   let p=G.players[G.cur];log(p.name+' 翻牌: '+cdisp(c));
   if(c.t==='n'){
@@ -141,7 +141,7 @@ function doHit(){clearTurnTimer();
   broadcast();advance();
 }
 
-function doStay(){clearTurnTimer();let p=G.players[G.cur];p.status='stayed';log(p.name+' 停牌','ok');broadcast();advance()}
+function doStay(){if(actionLock)return;actionLock=true;clearTurnTimer();let p=G.players[G.cur];p.status='stayed';log(p.name+' 停牌','ok');broadcast();advance()}
 
 function autoF3(){
   if(G.f3r<=0){if(G.pending.length){setTimeout(procPend,300)}else{advance()}return}
@@ -206,7 +206,7 @@ function endRound(f7){clearTurnTimer();
   p.hand.forEach(c=>G.disc.push(c));p.bonus.forEach(c=>G.disc.push(c))});
   if(G.players.some(p=>p.total>=WIN)){showEnd();return}
   let best=-1,bi=G.dealer;G.players.forEach((p,i)=>{if(p.rscore>best){best=p.rscore;bi=i}});G.dealer=bi;
-  G.f7winner=f7;broadcast();setTimeout(()=>{if(G.phase==='roundEnd')newRound()},2000);
+  G.f7winner=f7;broadcast();setTimeout(()=>{if(G.phase==='roundEnd')newRound()},3000);
 }
 
 function showEnd(){
@@ -239,7 +239,7 @@ wss.on('connection',(ws)=>{
     let msg;try{msg=JSON.parse(raw)}catch(e){return}
     if(msg.type==='rejoin'){
       let idx=seats.findIndex(s=>s.name===msg.name&&!s.ai);
-      if(idx>=0){ws.seat=idx;ws.send(JSON.stringify({type:'seated',seat:idx}));ws.send(JSON.stringify({type:'state',G,seats,roomSize,hostSeat}))}
+      if(idx>=0){ws.seat=idx;seats[idx].dc=false;ws.send(JSON.stringify({type:'seated',seat:idx}));ws.send(JSON.stringify({type:'state',G,seats,roomSize,hostSeat}));broadcast()}
       return;
     }if(msg.type==='join'){
       if(G.phase!=='lobby'){ws.send(JSON.stringify({type:'info',text:'游戏进行中，请等待本局结束'}));return}
@@ -268,11 +268,35 @@ wss.on('connection',(ws)=>{
       if(ws.seat!==hostSeat||G.phase!=='roundEnd')return;newRound();
     }else if(msg.type==='restart'){
       if(ws.seat!==hostSeat)return;restartGame();
+    }else if(msg.type==='kick'){
+      if(ws.seat!==hostSeat||G.phase!=='lobby')return;
+      let ki=msg.seat;
+      if(ki<0||ki>=seats.length||ki===hostSeat||seats[ki].ai)return;
+      // Notify kicked player
+      clients.forEach(c=>{if(c.seat===ki){c.send(JSON.stringify({type:'kicked'}));c.seat=-1}});
+      seats.splice(ki,1);
+      clients.forEach(c=>{if(c.seat>ki)c.seat--});
+      if(hostSeat>ki)hostSeat--;
+      broadcast();
     }else if(msg.type==='backToLobby'){
       if(ws.seat!==hostSeat)return;backToLobby();
     }
   });
-  ws.on('close',()=>{clients.delete(ws)});
+  ws.on('close',()=>{
+    clients.delete(ws);
+    if(ws.seat>=0&&ws.seat<seats.length&&!seats[ws.seat].ai){
+      let si=ws.seat;
+      if(G.phase==='lobby'){
+        seats.splice(si,1);
+        clients.forEach(c=>{if(c.seat>si)c.seat--});
+        if(hostSeat>=seats.length)hostSeat=0;
+        broadcast();
+      } else {
+        seats[si].dc=true;
+        broadcast();
+      }
+    }
+  });
 });
 
 const PORT=process.env.PORT||3000;
