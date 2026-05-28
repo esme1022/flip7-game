@@ -38,6 +38,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .spec-bar{display:none;background:var(--ylw);color:#333;text-align:center;padding:8px;font-weight:700;font-size:14px;position:fixed;top:0;left:0;right:0;z-index:50}.spec-bar.show{display:block}
 #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--bg3);padding:12px 24px;border-radius:var(--r);z-index:200;display:none;max-width:90%}#toast.show{display:block}
 .conn{color:var(--dim);font-size:13px}
+.action-float{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:80;display:flex;gap:12px;background:rgba(26,26,46,.95);padding:14px 20px;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,.5);border:1px solid var(--pri)}.action-float .btn{min-width:80px}
+.countdown{display:inline-block;margin-left:8px;padding:2px 8px;border-radius:10px;background:var(--red);color:#fff;font-size:12px;font-weight:700;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+.bottom-row{width:100%;max-width:700px;display:flex;gap:8px;margin-top:8px}.bottom-row .glog{flex:1;min-width:0}
+.scoreboard{width:200px;flex-shrink:0;background:var(--bg2);border-radius:var(--r);padding:10px;max-height:160px;overflow-y:auto;font-size:11px}
+.scoreboard h4{font-size:11px;color:var(--pri2);margin-bottom:6px}
+.sb-row{display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid rgba(255,255,255,.05)}.sb-row:last-child{border:none}
+.sb-name{color:var(--txt);max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sb-score{color:var(--ylw);font-weight:700}.sb-total{color:var(--dim)}
+@media(max-width:600px){.bottom-row{flex-direction:column}.scoreboard{width:100%;max-height:100px}}
 </style></head><body>
 <div id="specBar" class="spec-bar">观战中 — 游戏进行中，请等待本局结束后加入</div>
 <div id="toast"></div>
@@ -49,7 +59,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 <div id="joinBlock"><div class="join-area"><input id="nameIn" maxlength="12" placeholder="输入昵称"><button class="btn bp" id="btnJoin">加入</button></div></div>
 <div id="hostLobby" class="host-only"><h3 style="margin-top:16px">房间人数</h3><div id="rsBtns" class="rs-row"></div><button class="btn bl bp" id="btnStart" style="margin-top:16px;width:100%">开始游戏</button></div>
 </div></section>
-<section id="game" class="scr"><div id="gh" class="ghdr"></div><div id="ti" class="turn-info"></div><div id="pa" class="players-area"></div><div id="aa" class="aa"></div><div id="glog" class="glog"></div></section>
+<section id="game" class="scr"><div id="gh" class="ghdr"></div><div id="ti" class="turn-info"></div><div id="pa" class="players-area"></div><div id="aa" class="aa"></div><div id="floatAA" class="action-float" style="display:none"></div><div class="bottom-row"><div id="glog" class="glog"></div><div id="scoreboard" class="scoreboard"><h4>积分榜</h4><div id="sbBody"></div></div></div><div id="gameHostBtns" class="host-only" style="margin-top:8px;opacity:.7;gap:10px"><button class="btn bo" style="font-size:12px;padding:6px 14px" id="btnRestartG">重开本局</button><button class="btn bo" style="font-size:12px;padding:6px 14px" id="btnLobbyG">返回房间</button></div></section>
 <section id="roundEnd" class="scr result-scr"><h2 class="ftit" id="ret"></h2><table class="rt" id="rrt"></table>
 <div id="hostRound" class="host-only"><button class="btn bp bl" id="btnNext">下一回合</button></div></section>
 <section id="gameEnd" class="scr result-scr"><h2 class="ftit" id="wn"></h2><p id="ws" class="sub"></p><table class="rt" id="frt"></table>
@@ -72,10 +82,10 @@ function rcard(c){if(c.xx)return'<div class="cd cn" style="border:2px solid var(
 function buildRs(){var h="";for(var n=2;n<=12;n++)h+='<button type="button" data-n="'+n+'" class="'+(n===selRoom?"sel":"")+'">'+n+"</button>";$("rsBtns").innerHTML=h;$("rsBtns").querySelectorAll("button").forEach(function(b){b.onclick=function(){selRoom=parseInt(b.dataset.n,10);buildRs();if(isHost())send({type:"setRoomSize",size:selRoom})}})}
 buildRs();
 function renderLobby(){$("roomMax").textContent=roomSize;selRoom=roomSize;$("seatCnt").textContent=seats.length;var ul=$("seatList");ul.innerHTML="";seats.forEach(function(s,i){var li=document.createElement("li");if(i===mySeat)li.classList.add("me");var pre=(s.ai?"\ud83e\udd16 ":"")+(i===hostSeat?"\ud83d\udc51 ":"");li.textContent=pre+s.name;ul.appendChild(li)});var joined=mySeat>=0;$("joinBlock").style.display=joined?"none":"block";var hh=isHost()&&G&&G.phase==="lobby";$("hostLobby").classList.toggle("show",!!hh);$("btnStart").disabled=!joined||seats.length<1}
-function renderGame(){if(!G)return;var pot=G.players.length*ANTE*G.mult;$("gh").innerHTML='<div class="gi"><span class="gl2">\u724c\u5806</span><span class="gv">'+G.deck.length+'\u5f20</span></div><div class="gi"><span class="gl2">\u5e95\u6ce8</span><span class="gv">'+ANTE+'\u8c46</span></div><div class="gi"><span class="gl2">\u5956\u6c60</span><span class="gv">'+pot+'\u8c46</span></div><div class="gi"><span class="gl2">\u52a0\u6ce8</span><span class="gv">x'+G.mult+'</span></div><div class="gi"><span class="gl2">\u56de\u5408</span><span class="gv">'+G.round+'</span></div>';
-var ti="";if(G.phase==="raise")ti="\ud83c\udccf <span class=\"highlight\">"+esc(G.players[G.dealer].name)+"</span> \u662f\u5e84\u5bb6\uff0c\u662f\u5426\u52a0\u6ce8？";
+function renderGame(){if(!G)return;var ghb=$("gameHostBtns");if(ghb)ghb.classList.toggle("show",isHost());var pot=G.players.length*ANTE*G.mult;$("gh").innerHTML='<div class="gi"><span class="gl2">\u724c\u5806</span><span class="gv">'+G.deck.length+'\u5f20</span></div><div class="gi"><span class="gl2">\u5e95\u6ce8</span><span class="gv">'+ANTE+'\u8c46</span></div><div class="gi"><span class="gl2">\u5956\u6c60</span><span class="gv">'+pot+'\u8c46</span></div><div class="gi"><span class="gl2">\u52a0\u6ce8</span><span class="gv">x'+G.mult+'</span></div><div class="gi"><span class="gl2">\u56de\u5408</span><span class="gv">'+G.round+'</span></div>';
+var ti="";if(G.phase==="raise")ti="\ud83c\udccf <span class=\"highlight\">"+esc(G.players[G.dealer].name)+"</span> \u662f\u5e84\u5bb6\uff0c\u662f\u5426\u52a0\u6ce8？" + cdDesktop() + "";
 else if(G.f3r>0&&G.f3t>=0)ti="\ud83c\udccf <span class=\"highlight\">"+esc(G.players[G.f3t].name)+"</span> \u88ab\u5f3a\u5236\u7ffb\u724c\uff08\u5269 "+G.f3r+" \u5f20\uff09";
-else if(G.phase==="playing")ti="\u27a1 \u8f6e\u5230 <span class=\"highlight\">"+esc(G.players[G.cur].name)+(G.cur===mySeat?" (\u4f60)":"")+"</span>";$("ti").innerHTML=ti;
+else if(G.phase==="playing")ti="\u27a1 \u8f6e\u5230 <span class=\"highlight\">"+esc(G.players[G.cur].name)+(G.cur===mySeat?" (\u4f60)":"")+"</span>";var cdd=cdDesktop();if(cdd&&(G.phase==="raise"||(G.phase==="playing"&&mySeat===G.cur)))ti+=cdd;$("ti").innerHTML=ti;
 var pa="";G.players.forEach(function(pl,i){var cls="player-box";if(i===G.cur&&G.phase==="playing")cls+=" current";if(pl.status==="stayed")cls+=" stayed";if(pl.status==="busted")cls+=" busted";if(i===mySeat)cls+=" me";
 var nm=esc(pl.name);if(i===hostSeat&&seats[i]&&!seats[i].ai)nm="\ud83d\udc51 "+nm;else if(seats[i]&&seats[i].ai)nm="\ud83e\udd16 "+nm;if(i===G.cur&&G.phase==="playing"&&i===mySeat)nm+=" (\u4f60)";
 pa+='<div class="'+cls+'"><div class="pname">'+nm+'</div><div class="pscore"><b>\u5c40\u9762:'+calcLive(pl)+'</b> | \u7d2f\u8ba1:'+pl.total+' | \ud83e\uded8'+pl.beans+'</div><div class="pcards">';pl.hand.forEach(function(c){pa+=rcard(c)});if(!pl.hand.length&&pl.status==="active")pa+='<span style="color:var(--dim);font-size:10px">\u7a7a</span>';pa+='</div><div class="ptags">';
@@ -94,8 +104,19 @@ G.finalRanking.forEach(function(p,i){var cls=i===0?"wr":"",ct=p._bc>=0?"+"+p._bc
 function onState(msg){G=msg.G;seats=msg.seats||[];roomSize=msg.roomSize||4;hostSeat=msg.hostSeat!=null?msg.hostSeat:0;selRoom=roomSize;$("roomMax").textContent=roomSize;buildRs();
 var spec=mySeat<0&&G.phase!=="lobby";$("specBar").classList.toggle("show",spec);document.querySelectorAll(".scr").forEach(function(s){s.style.paddingTop=spec?"48px":"20px"});
 if(G.phase==="lobby"){showScr("lobby");renderLobby()}else if(G.phase==="roundEnd"){showScr("roundEnd");renderRoundEnd();renderGame()}else if(G.phase==="gameEnd"){showScr("gameEnd");renderGameEnd()}else{showScr("game");renderGame()}renderLobby()}
+function cdDesktop(){if(!G||!G.deadline)return"";var s=Math.max(0,Math.ceil((G.deadline-Date.now())/1000));return s>0?' <span class="countdown">'+s+"s</span>":""}
+function renderScoreboard(){if(!G||!G.players)return;var sb="";var sorted=G.players.slice().sort(function(a,b){return b.total-a.total||calcLive(b)-calcLive(a)});
+sorted.forEach(function(p,i){var live=calcLive(p);sb+='<div class="sb-row"><span class="sb-name">'+(i+1)+". "+esc(p.name)+'</span><span class="sb-score">'+live+'</span><span class="sb-total">(累'+p.total+')</span></div>'});
+$("sbBody").innerHTML=sb}
+function renderFloat(){var f=$("floatAA");var isMobile=window.innerWidth<=480;
+if(!isMobile||!G||G.phase==="roundEnd"||G.phase==="gameEnd"||G.phase==="lobby"){f.style.display="none";return}
+var html="";var dl=G.deadline?Math.max(0,Math.ceil((G.deadline-Date.now())/1000)):0;var cdHtml=dl>0?'<span class="countdown">'+dl+"s</span>":"";
+if(G.phase==="raise"&&mySeat===G.dealer){html='<button class="btn bw" onclick="send({type:'+String.fromCharCode(39)+'raise'+String.fromCharCode(39)+'})">\u52a0\u6ce8 x'+(G.mult*2)+'</button><button class="btn bo" onclick="send({type:'+String.fromCharCode(39)+'skip'+String.fromCharCode(39)+'})">\u4e0d\u52a0\u6ce8</button>'+cdHtml}
+else if(G.phase==="playing"&&mySeat===G.cur&&G.players[G.cur].status==="active"&&G.f3r<=0&&!G.targetPending){var cs=G.players[G.cur].hand.length>0;html='<button class="btn bp" onclick="send({type:'+String.fromCharCode(39)+'hit'+String.fromCharCode(39)+'})">\u7ffb\u724c</button><button class="btn bs" onclick="send({type:'+String.fromCharCode(39)+'stay'+String.fromCharCode(39)+'})"'+(cs?"":' disabled')+'>\u505c\u724c</button>'+cdHtml}
+if(html){f.innerHTML=html;f.style.display="flex"}else{f.style.display="none"}}
+setInterval(function(){if(G&&G.deadline&&(G.phase==="raise"||G.phase==="playing")){renderFloat();var ti2=$('ti');if(ti2){renderGame()}}},1000);
 function connect(){var proto=location.protocol==="https:"?"wss:":"ws:";ws=new WebSocket(proto+"//"+location.host);$("connSt").textContent="\u8fde\u63a5\u4e2d…";ws.onopen=function(){$("connSt").textContent="\u5df2\u8fde\u63a5"};ws.onclose=function(){$("connSt").textContent="\u5df2\u65ad\u5f00\uff0c3\u79d2\u540e\u91cd\u8fde…";setTimeout(connect,3000)};ws.onmessage=function(ev){var msg;try{msg=JSON.parse(ev.data)}catch(e){return}if(msg.type==="state")onState(msg);else if(msg.type==="seated")mySeat=msg.seat;else if(msg.type==="info")toast(msg.text)}}
-$("btnJoin").onclick=function(){var n=$("nameIn").value.trim();if(!n){toast("\u8bf7\u8f93\u5165\u6635\u79f0");return}send({type:"join",name:n})};
-$("btnStart").onclick=function(){send({type:"start"})};$("btnNext").onclick=function(){send({type:"nextRound"})};$("btnRestart").onclick=function(){send({type:"restart"})};$("btnLobby").onclick=function(){send({type:"backToLobby"})};
+$("btnJoin").onclick=function(){var n=$("nameIn").value.trim();if(!n){toast("\u8bf7\u8f93\u5165\u6635\u79f0");return}send({type:"join",name:n});localStorage.setItem("flip7name",n)};
+$("btnStart").onclick=function(){send({type:"start"})};$("btnNext").onclick=function(){send({type:"nextRound"})};$("btnRestart").onclick=function(){send({type:"restart"})};$("btnLobby").onclick=function(){send({type:"backToLobby"})};$("btnRestartG").onclick=function(){send({type:"restart"})};$("btnLobbyG").onclick=function(){send({type:"backToLobby"})};
 connect();})();
 </script></body></html>

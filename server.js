@@ -15,6 +15,7 @@ const PR={2:[1],3:[.6,.4],4:[.5,.3,.2],5:[.4,.3,.2,.1],6:[.4,.3,.2,.07,.03],
   11:[.24,.18,.14,.12,.10,.08,.06,.04,.025,.015],12:[.22,.17,.14,.11,.10,.08,.07,.05,.03,.02,.01]};
 
 let G=null, seats=[], clients=new Set(), roomSize=4, hostSeat=0;
+let turnTimer=null, turnDeadline=0;
 const AI_NAMES=['电脑A','电脑B','电脑C','电脑D','电脑E','电脑F','电脑G','电脑H','电脑I','电脑J','电脑K','电脑L'];
 
 function initState(){
@@ -42,6 +43,22 @@ function broadcast(){
 
 function isAI(idx){return seats[idx]&&seats[idx].ai}
 
+
+function setTurnTimer(sec){
+  if(turnTimer)clearTimeout(turnTimer);
+  turnDeadline=Date.now()+sec*1000;
+  G.deadline=turnDeadline;
+  turnTimer=setTimeout(()=>{
+    turnTimer=null;
+    if(G.phase==='raise'){skipRaise()}
+    else if(G.phase==='playing'&&G.f3r<=0&&!G.targetPending){
+      let p=G.players[G.cur];
+      if(p&&p.status==='active'){if(p.hand.length>0){doStay()}else{doHit()}}
+    }
+  },sec*1000);
+}
+function clearTurnTimer(){if(turnTimer){clearTimeout(turnTimer);turnTimer=null;G.deadline=0}}
+
 function startGame(){
   let aiNeeded=roomSize-seats.length;
   let aiIdx=0;
@@ -60,7 +77,7 @@ function newRound(){
   log('');log('=== 第'+G.round+'回合开始 ===');log('庄家: '+G.players[G.dealer].name);
   G.phase='raise';
   if(G.totalR>=MAXR){startTurns();return}
-  broadcast();aiCheckRaise();
+  setTurnTimer(5);broadcast();aiCheckRaise();
 }
 
 function aiCheckRaise(){
@@ -72,7 +89,7 @@ function aiCheckRaise(){
   },1200+Math.random()*800);
 }
 
-function startTurns(){G.cur=G.dealer;G.phase='playing';broadcast();aiCheckTurn()}
+function startTurns(){G.cur=G.dealer;G.phase='playing';setTurnTimer(7);broadcast();aiCheckTurn()}
 
 function aiCheckTurn(){
   if(G.phase!=='playing'||G.f3r>0||G.targetPending)return;
@@ -96,15 +113,15 @@ function advance(){
   let next=(G.cur+1)%G.players.length,att=0;
   while(G.players[next].status!=='active'&&att<G.players.length){next=(next+1)%G.players.length;att++}
   if(att>=G.players.length){endRound();return}
-  G.cur=next;broadcast();aiCheckTurn();
+  G.cur=next;setTurnTimer(7);broadcast();aiCheckTurn();
 }
 
 function chkEnd(){if(!G.players.some(p=>p.status==='active')){endRound();return true}return false}
 
-function doRaise(){G.roundRaised=true;G.totalR++;G.mult*=2;log('庄家加注！底注倍率→x'+G.mult,'ac');startTurns()}
-function skipRaise(){startTurns()}
+function doRaise(){clearTurnTimer();G.roundRaised=true;G.totalR++;G.mult*=2;log('庄家加注！底注倍率→x'+G.mult,'ac');startTurns()}
+function skipRaise(){clearTurnTimer();startTurns()}
 
-function doHit(){
+function doHit(){clearTurnTimer();
   let c=draw();if(!c){log('牌堆空！');endRound();return}
   let p=G.players[G.cur];log(p.name+' 翻牌: '+cdisp(c));
   if(c.t==='n'){
@@ -124,7 +141,7 @@ function doHit(){
   broadcast();advance();
 }
 
-function doStay(){let p=G.players[G.cur];p.status='stayed';log(p.name+' 停牌','ok');broadcast();advance()}
+function doStay(){clearTurnTimer();let p=G.players[G.cur];p.status='stayed';log(p.name+' 停牌','ok');broadcast();advance()}
 
 function autoF3(){
   if(G.f3r<=0){if(G.pending.length){setTimeout(procPend,300)}else{advance()}return}
@@ -183,13 +200,13 @@ function selectTarget(ti){
 function afterAct(){if(G.pending.length){setTimeout(procPend,300)}else if(G.phase==='playing'){if(!chkEnd())advance()}else{startTurns()}}
 function procPend(){if(!G.pending.length){if(!chkEnd())advance();return}let a=G.pending.shift();handleAction(a.c,a.pi)}
 
-function endRound(f7){
+function endRound(f7){clearTurnTimer();
   if(f7===undefined)f7=-1;G.phase='roundEnd';
   G.players.forEach((p,i)=>{if(p.status!=='busted'){p.rscore=calcScore(p,i===f7);p.total+=p.rscore}else{p.rscore=0}
   p.hand.forEach(c=>G.disc.push(c));p.bonus.forEach(c=>G.disc.push(c))});
   if(G.players.some(p=>p.total>=WIN)){showEnd();return}
   let best=-1,bi=G.dealer;G.players.forEach((p,i)=>{if(p.rscore>best){best=p.rscore;bi=i}});G.dealer=bi;
-  G.f7winner=f7;broadcast();
+  G.f7winner=f7;broadcast();setTimeout(()=>{if(G.phase==='roundEnd')newRound()},2000);
 }
 
 function showEnd(){
@@ -220,7 +237,11 @@ wss.on('connection',(ws)=>{
   ws.send(JSON.stringify({type:'state',G,seats,roomSize,hostSeat}));
   ws.on('message',(raw)=>{
     let msg;try{msg=JSON.parse(raw)}catch(e){return}
-    if(msg.type==='join'){
+    if(msg.type==='rejoin'){
+      let idx=seats.findIndex(s=>s.name===msg.name&&!s.ai);
+      if(idx>=0){ws.seat=idx;ws.send(JSON.stringify({type:'seated',seat:idx}));ws.send(JSON.stringify({type:'state',G,seats,roomSize,hostSeat}))}
+      return;
+    }if(msg.type==='join'){
       if(G.phase!=='lobby'){ws.send(JSON.stringify({type:'info',text:'游戏进行中，请等待本局结束'}));return}
       if(seats.length>=12){ws.send(JSON.stringify({type:'info',text:'房间已满'}));return}
       if(seats.some(s=>s.name===msg.name)){ws.send(JSON.stringify({type:'info',text:'名称已存在'}));return}
