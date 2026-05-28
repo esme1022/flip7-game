@@ -229,10 +229,16 @@ function nextRound(){newRound()}
 function showEnd(){let sorted=[...G.players].sort((a,b)=>b.total-a.total);let w=sorted[0];
 let pool=G.players.length*ANTE*G.mult,rats=PR[G.players.length];
 document.getElementById('wn').textContent=w.name+' 获胜!';document.getElementById('ws').textContent='最终得分: '+w.total+' 分';
-let h='<thead><tr><th>#</th><th>玩家</th><th>总分</th><th>欢乐豆</th></tr></thead><tbody>';
-sorted.forEach((p,i)=>{let bc=0;if(i===0)bc=pool;else{bc=-Math.round(pool*(rats[rats.length-i]||rats[0]))}p.beans+=bc;
-let cls=i===0?'wr':'',ct=bc>=0?'+'+bc:''+bc,cc=bc>=0?'pos':'neg';
-h+='<tr class="'+cls+'"><td>'+(i+1)+'</td><td>'+p.name+'</td><td>'+p.total+'</td><td><span class="bc '+cc+'">'+ct+'</span></td></tr>'});
+let totalPaid=0;let results=[];
+sorted.forEach((p,i)=>{if(i===0){results.push({p,bc:0,bankrupt:false})}else{
+let owe=Math.round(pool*(rats[rats.length-i]||rats[0]));
+let bankrupt=false;if(owe>p.beans){owe=p.beans;bankrupt=true}
+p.beans-=owe;totalPaid+=owe;results.push({p,bc:-owe,bankrupt})}});
+w.beans+=totalPaid;results[0].bc=totalPaid;
+let h='<thead><tr><th>#</th><th>玩家</th><th>总分</th><th>欢乐豆</th><th></th></tr></thead><tbody>';
+results.forEach((r,i)=>{let cls=i===0?'wr':'',ct=r.bc>=0?'+'+r.bc:''+r.bc,cc=r.bc>=0?'pos':'neg';
+let tag=r.bankrupt?' <span style="color:var(--red);font-weight:700">💸 破产</span>':'';
+h+='<tr class="'+cls+'"><td>'+(i+1)+'</td><td>'+r.p.name+tag+'</td><td>'+r.p.total+'</td><td><span class="bc '+cc+'">'+ct+'</span> (余:'+r.p.beans+')</td></tr>'});
 h+='</tbody>';document.getElementById('frt').innerHTML=h;S('gameEnd')}
 
 function restartSame(){G.players.forEach(p=>{p.total=0;p.rscore=0;p.hand=[];p.bonus=[];p.beans=BEANS-ANTE;p.status='active';p.safe=false});
