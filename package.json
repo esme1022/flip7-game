@@ -1,0 +1,26 @@
+{
+  "name": "flip7-game",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "build": "node gen-client.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/esme1022/flip7-game.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/esme1022/flip7-game/issues"
+  },
+  "homepage": "https://github.com/esme1022/flip7-game#readme",
+  "dependencies": {
+    "express": "^5.2.1",
+    "ws": "^8.21.0"
+  }
+}
