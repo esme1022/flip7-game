@@ -249,6 +249,30 @@ function aiCheckTarget(){
     selectTarget(ti);
   },1000+Math.random()*1000);
 }
+// Check if player pi has a duplicate of addedCard after a steal/swap transfer
+function checkDupAfterTransfer(pi,addedCard,cb){
+  if(!addedCard||addedCard.t!=='n'||addedCard.sp)return false; // special cards don't dup normally
+  let p=G.players[pi];
+  // Count how many of this value are now in hand
+  let dups=p.hand.filter(x=>x.t==='n'&&x.v===addedCard.v&&!x.sp);
+  if(dups.length<2)return false;
+  // Mark duplicates
+  dups.forEach(x=>x.xx=true);
+  log(p.name+' 因换牌重复['+addedCard.v+']！','ex');
+  if(p.safe){
+    broadcast();setTimeout(()=>{
+      p.hand=p.hand.filter(x=>!x.xx);p.safe=false;log('✔ 安全牌生效！','ok');
+      triggerRaise(pi,'safety_saved',cb);
+    },1000);
+  }else{
+    broadcast();setTimeout(()=>{
+      p.status='busted';log(p.name+' 💥 换牌触发爆炸！','ex');p.hand=[];p.bonus=[];
+      broadcast();setTimeout(()=>{if(!chkEnd())advance()},600);
+    },1200);
+  }
+  return true;
+}
+
 function selectTarget(ti){
   if(!G.targetPending)return;
   let{card:c,from,cb}=G.targetPending;
@@ -267,16 +291,28 @@ function selectTarget(ti){
     log(who+' 对'+whom+' 摸一张停','ac');broadcast();setTimeout(autoF3,800);
   }else if(c.v==='steal'){
     let cards=G.players[ti].hand.filter(x=>x.t==='n');
-    if(cards.length){let s=cards[0|Math.random()*cards.length];G.players[ti].hand=G.players[ti].hand.filter(x=>x!==s);G.players[from].hand.push(s);log(who+' 偷['+cname(s)+']自'+whom,'ac')}
-    else log(who+' 偷牌失败','ac');
+    if(cards.length){
+      let s=cards[0|Math.random()*cards.length];
+      G.players[ti].hand=G.players[ti].hand.filter(x=>x!==s);
+      G.players[from].hand.push(s);
+      log(who+' 偷['+cname(s)+']自'+whom,'ac');
+      broadcast();
+      if(checkDupAfterTransfer(from,s,cb))return;
+    }else log(who+' 偷牌失败','ac');
     broadcast();setTimeout(()=>afterAct(cb),100);
   }else if(c.v==='swap'){
     let fc=G.players[from].hand.filter(x=>x.t==='n'),tc=G.players[ti].hand.filter(x=>x.t==='n');
     if(fc.length&&tc.length){
       let f=fc[0|Math.random()*fc.length],t2=tc[0|Math.random()*tc.length];
-      G.players[from].hand=G.players[from].hand.filter(x=>x!==f);G.players[ti].hand=G.players[ti].hand.filter(x=>x!==t2);
-      G.players[from].hand.push(t2);G.players[ti].hand.push(f);
+      G.players[from].hand=G.players[from].hand.filter(x=>x!==f);
+      G.players[ti].hand=G.players[ti].hand.filter(x=>x!==t2);
+      G.players[from].hand.push(t2);
+      G.players[ti].hand.push(f);
       log(who+' 用['+cname(f)+']换'+whom+'的['+cname(t2)+']','ac');
+      broadcast();
+      // Check explosion for both sides after swap
+      if(checkDupAfterTransfer(from,t2,cb))return;
+      if(checkDupAfterTransfer(ti,f,cb))return;
     }else log(who+' 换牌失败','ac');
     broadcast();setTimeout(()=>afterAct(cb),100);
   }else if(c.v==='discard'){
