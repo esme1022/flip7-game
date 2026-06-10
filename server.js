@@ -1,293 +1,405 @@
-const express = require('express');
-const http = require('http');
-const { WebSocketServer } = require('ws');
-const path = require('path');
+'use strict';
+const express=require('express');
+const http=require('http');
+const {WebSocketServer}=require('ws');
+const path=require('path');
 
-const app = express();
-const server = http.createServer(app);
-const wss = new WebSocketServer({ server });
-app.use(express.static(path.join(__dirname, 'public')));
+const app=express();
+const server=http.createServer(app);
+const wss=new WebSocketServer({server});
+app.use(express.static(path.join(__dirname,'public')));
 
-const WIN=200, BEANS=5000, ANTE=100, MAXR=3;
+const WIN=200,BEANS=5000,ANTE=100;
 const PR={2:[1],3:[.6,.4],4:[.5,.3,.2],5:[.4,.3,.2,.1],6:[.4,.3,.2,.07,.03],
   7:[.35,.25,.18,.12,.07,.03],8:[.30,.22,.17,.13,.09,.06,.03],
   9:[.28,.20,.16,.13,.10,.07,.04,.02],10:[.26,.19,.15,.12,.10,.08,.05,.03,.02],
   11:[.24,.18,.14,.12,.10,.08,.06,.04,.025,.015],12:[.22,.17,.14,.11,.10,.08,.07,.05,.03,.02,.01]};
 
-let G=null, seats=[], clients=new Set(), roomSize=4, hostSeat=0;
-let turnTimer=null, turnDeadline=0, actionLock=false;
-const AI_NAMES=['电脑A','电脑B','电脑C','电脑D','电脑E','电脑F','电脑G','电脑H','电脑I','电脑J','电脑K','电脑L'];
+let G=null,seats=[],clients=new Set(),roomSize=4,hostSeat=0;
+let turnTimer=null,actionLock=false;
+const AI=['电脑A','电脑B','电脑C','电脑D','电脑E','电脑F','电脑G','电脑H','电脑I','电脑J','电脑K','电脑L'];
 
 function initState(){
-  G={players:[],deck:[],disc:[],round:0,cur:0,dealer:0,roundRaised:false,totalR:0,mult:1,phase:'lobby',log:[],pending:[],f3r:0,f3t:-1,targetPending:null,roomSize:roomSize,hostSeat:0};
+  G={gameMode:'classic',players:[],deck:[],disc:[],round:0,cur:0,dealer:0,
+     mult:1,phase:'lobby',log:[],pending:[],f3r:0,f3t:-1,f3type:3,flip1stop:false,
+     targetPending:null,raiseChoice:null,raiseCallback:null,
+     roomSize,hostSeat:0,deadline:0,f7winner:-1,finalRanking:null};
   seats=[];
 }
 initState();
 
-function mkDeck(){let d=[];for(let v=0;v<=12;v++){let n=Math.max(1,v);for(let i=0;i<n;i++)d.push({t:'n',v})}
-d.push({t:'b',v:'+2'},{t:'b',v:'+4'},{t:'b',v:'+6'},{t:'b',v:'+8'},{t:'b',v:'+10'},{t:'b',v:'x2'});
-for(let i=0;i<3;i++){d.push({t:'a',v:'freeze'});d.push({t:'a',v:'flip3'});d.push({t:'a',v:'safety'})}return d}
-function shuf(a){for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
-function draw(){if(!G.deck.length){if(G.disc.length){G.deck=shuf([...G.disc]);G.disc=[];log('牌堆耗尽，弃牌堆重新洗入（'+G.deck.length+'张）')}else return null}return G.deck.pop()}
-function cname(c){if(c.t==='n')return String(c.v);if(c.t==='b')return c.v;return{freeze:'冻结',flip3:'翻三张',safety:'安全牌'}[c.v]}
-function cdisp(c){return'['+cname(c)+']'}
-function log(t,cls){G.log.push({t,cls:cls||''})}
-function uniq(p){let s=new Set();p.hand.forEach(c=>{if(c.t==='n')s.add(c.v)});return[...s]}
-function calcScore(p,f7){let ns=0;p.hand.forEach(c=>{if(c.t==='n')ns+=c.v});let mul=1,ba=0;p.bonus.forEach(b=>{if(b.v==='x2')mul*=2;else ba+=parseInt(b.v)});return ns*mul+ba+(f7?15:0)}
-function csLive(p){if(p.status==='busted')return 0;let ns=0;p.hand.forEach(c=>{if(c.t==='n')ns+=c.v});let mul=1,ba=0;p.bonus.forEach(b=>{if(b.v==='x2')mul*=2;else ba+=parseInt(b.v)});return ns*mul+ba}
-
-function broadcast(){actionLock=false;
-  const state=JSON.stringify({type:'state',G,seats,roomSize,hostSeat});
-  clients.forEach(ws=>{if(ws.readyState===1)ws.send(state)});
+// ===== DECKS =====
+function mkClassicDeck(){
+  let d=[];
+  for(let v=0;v<=12;v++){let n=v<1?1:v;for(let i=0;i<n;i++)d.push({t:'n',v})}
+  ['+2','+4','+6','+8','+10','x2'].forEach(v=>d.push({t:'b',v}));
+  for(let i=0;i<3;i++)['freeze','flip3','safety'].forEach(v=>d.push({t:'a',v}));
+  return d;
+}
+function mkBerserkDeck(){
+  let d=[];
+  // 0→1, 1→1, 2→2, ..., 13→13 = 92 regular + 3 special = 95 number cards
+  for(let v=0;v<=13;v++){let n=v<=1?1:v;for(let i=0;i<n;i++)d.push({t:'n',v,sp:0})}
+  d.push({t:'n',v:0,sp:'c0'},{t:'n',v:7,sp:'b7'},{t:'n',v:13,sp:'c13'});
+  // 12 score-change cards
+  ['+2','+4','+6','+8','+10','x2','÷2','-2','-4','-6','-8','-10'].forEach(v=>d.push({t:'sc',v}));
+  // 14 function cards
+  for(let i=0;i<3;i++)['freeze','flip3','safety'].forEach(v=>d.push({t:'fn',v}));
+  ['flip4','steal','swap','flip1stop','discard'].forEach(v=>d.push({t:'fn',v}));
+  return d;
 }
 
-function isAI(idx){return seats[idx]&&(seats[idx].ai||seats[idx].dc)}
+function shuf(a){for(let i=a.length-1;i>0;i--){let j=0|Math.random()*(i+1);[a[i],a[j]]=[a[j],a[i]]}return a}
+function draw(){
+  if(!G.deck.length){if(!G.disc.length)return null;G.deck=shuf([...G.disc]);G.disc=[];log('牌堆洗入('+G.deck.length+'张)')}
+  return G.deck.pop();
+}
+function cname(c){
+  if(c.t==='n'){if(c.sp==='c0')return'彩色0';if(c.sp==='b7')return'霉运7';if(c.sp==='c13')return'彩色13';return''+c.v}
+  if(c.t==='b'||c.t==='sc')return c.v;
+  return{freeze:'冻结',flip3:'翻三张',safety:'安全牌',flip4:'翻四张',steal:'偷牌',swap:'换牌',flip1stop:'摸一张停',discard:'弃牌'}[c.v]||c.v;
+}
+function log(t,cls){G.log.push({t,cls:cls||''})}
+function uniqNums(p){let s=new Set();p.hand.forEach(c=>{if(c.t==='n')s.add(c.v)});return[...s]}
 
+function calcScore(p,f7){
+  if(G.gameMode==='berserk'){
+    let hasC0=p.hand.some(c=>c.t==='n'&&c.sp==='c0')&&uniqNums(p).length<7;
+    let ns=hasC0?0:p.hand.reduce((s,c)=>c.t==='n'?s+c.v:s,0);
+    let mul=1,add=0;
+    p.bonus.forEach(b=>{if(b.v==='x2')mul*=2;else if(b.v==='÷2')mul/=2;else{let n=parseInt(b.v);if(!isNaN(n))add+=n}});
+    return Math.max(0,Math.floor(ns*mul+add))+(f7?15:0);
+  }
+  let ns=p.hand.reduce((s,c)=>c.t==='n'?s+c.v:s,0),mul=1,ba=0;
+  p.bonus.forEach(b=>{if(b.v==='x2')mul*=2;else ba+=parseInt(b.v)});
+  return ns*mul+ba+(f7?15:0);
+}
+function csLive(p){return p.status==='busted'?0:calcScore(p,false)}
+
+function broadcast(){
+  actionLock=false;
+  const s=JSON.stringify({type:'state',G,seats,roomSize,hostSeat});
+  clients.forEach(w=>{if(w.readyState===1)w.send(s)});
+}
+function isAI(i){return seats[i]&&(seats[i].ai||seats[i].dc)}
 
 function setTurnTimer(sec){
   if(turnTimer)clearTimeout(turnTimer);
-  turnDeadline=Date.now()+sec*1000;
-  G.deadline=turnDeadline;
+  G.deadline=Date.now()+sec*1000;
   turnTimer=setTimeout(()=>{
     turnTimer=null;
-    if(G.phase==='raise'){skipRaise()}
-    else if(G.phase==='playing'&&G.f3r<=0&&!G.targetPending){
+    if(G.phase==='raiseChoice'){doSkipRaise();return}
+    if(G.phase==='playing'&&G.f3r<=0&&!G.targetPending){
       let p=G.players[G.cur];
-      if(p&&p.status==='active'){if(p.hand.length>0){doStay()}else{doHit()}}
+      if(p&&p.status==='active'){if(G.gameMode==='berserk'||!p.hand.length)doHit();else doStay()}
     }
   },sec*1000);
 }
-function clearTurnTimer(){if(turnTimer){clearTimeout(turnTimer);turnTimer=null;G.deadline=0}}
+function clearTimer(){if(turnTimer){clearTimeout(turnTimer);turnTimer=null;G.deadline=0}}
+
+function mkPlayer(s){return{name:s.name,hand:[],bonus:[],total:0,rscore:0,beans:BEANS-ANTE,status:'active',safe:false,ai:!!s.ai}}
 
 function startGame(){
-  let aiNeeded=roomSize-seats.length;
-  let aiIdx=0;
-  for(let i=0;i<aiNeeded;i++){
-    while(seats.some(s=>s.name===AI_NAMES[aiIdx]))aiIdx++;
-    seats.push({name:AI_NAMES[aiIdx],ai:true,id:'ai_'+aiIdx});aiIdx++;
-  }
-  G.players=seats.map(s=>({name:s.name,hand:[],bonus:[],total:0,rscore:0,beans:BEANS-ANTE,status:'active',safe:false,ai:!!s.ai}));
-  G.deck=shuf(mkDeck());G.disc=[];G.round=0;G.dealer=0;G.totalR=0;G.mult=1;G.log=[];G.pending=[];G.targetPending=null;
+  let ai=0;
+  while(seats.length<roomSize){while(seats.some(s=>s.name===AI[ai]))ai++;seats.push({name:AI[ai],ai:true,id:'ai_'+ai});ai++}
+  G.players=seats.map(mkPlayer);
+  G.deck=shuf(G.gameMode==='berserk'?mkBerserkDeck():mkClassicDeck());
+  G.disc=[];G.round=0;G.dealer=0;G.mult=1;G.log=[];G.pending=[];
+  G.targetPending=null;G.raiseChoice=null;G.raiseCallback=null;G.flip1stop=false;
   newRound();
 }
 
 function newRound(){
-  G.round++;G.roundRaised=false;G.f3r=0;G.f3t=-1;G.pending=[];G.targetPending=null;
+  G.round++;G.f3r=0;G.f3t=-1;G.f3type=3;G.flip1stop=false;
+  G.pending=[];G.targetPending=null;G.raiseChoice=null;G.raiseCallback=null;
   G.players.forEach(p=>{p.hand=[];p.bonus=[];p.rscore=0;p.status='active';p.safe=false});
-  log('');log('=== 第'+G.round+'回合开始 ===');log('庄家: '+G.players[G.dealer].name);
-  G.phase='raise';
-  if(G.totalR>=MAXR){startTurns();return}
-  setTurnTimer(5);broadcast();aiCheckRaise();
+  log('');log('=== 第'+G.round+'回合 ('+(G.gameMode==='berserk'?'狂暴':'经典')+') ===');
+  log('庄家: '+G.players[G.dealer].name);
+  G.cur=G.dealer;G.phase='playing';setTurnTimer(7);broadcast();aiCheckTurn();
 }
-
-function aiCheckRaise(){
-  if(G.phase!=='raise')return;
-  if(!isAI(G.dealer))return;
-  setTimeout(()=>{
-    if(G.phase!=='raise')return;
-    if(Math.random()<0.35&&G.totalR<MAXR){doRaise()}else{skipRaise()}
-  },1200+Math.random()*800);
-}
-
-function startTurns(){G.cur=G.dealer;G.phase='playing';setTurnTimer(7);broadcast();aiCheckTurn()}
 
 function aiCheckTurn(){
   if(G.phase!=='playing'||G.f3r>0||G.targetPending)return;
   if(!isAI(G.cur))return;
-  let p=G.players[G.cur];
-  if(p.status!=='active')return;
-  let score=csLive(p);
-  let threshold=12+Math.floor(Math.random()*14);
-  let cardCount=p.hand.length;
-  let curIdx=G.cur;
+  let p=G.players[G.cur];if(p.status!=='active')return;
+  let ci=G.cur,sc=csLive(p),cnt=p.hand.length;
   setTimeout(()=>{
-    if(G.phase!=='playing'||G.cur!==curIdx)return;
-    if(cardCount>=5&&score>=15){doStay()}
-    else if(score>=threshold&&cardCount>=2){doStay()}
-    else{doHit()}
+    if(G.phase!=='playing'||G.cur!==ci||G.f3r>0||G.targetPending)return;
+    if(G.gameMode==='berserk')doHit();
+    else if(cnt>=5&&sc>=15)doStay();
+    else if(sc>=(12+(0|Math.random()*14))&&cnt>=2)doStay();
+    else doHit();
   },1000+Math.random()*1500);
 }
 
 function advance(){
   if(chkEnd())return;
-  let next=(G.cur+1)%G.players.length,att=0;
-  while(G.players[next].status!=='active'&&att<G.players.length){next=(next+1)%G.players.length;att++}
-  if(att>=G.players.length){endRound();return}
-  G.cur=next;setTurnTimer(7);broadcast();aiCheckTurn();
+  let n=(G.cur+1)%G.players.length,a=0;
+  while(G.players[n].status!=='active'&&a<G.players.length){n=(n+1)%G.players.length;a++}
+  if(a>=G.players.length){endRound();return}
+  G.cur=n;setTurnTimer(7);broadcast();aiCheckTurn();
 }
-
 function chkEnd(){if(!G.players.some(p=>p.status==='active')){endRound();return true}return false}
 
-function doRaise(){if(actionLock)return;actionLock=true;clearTurnTimer();G.roundRaised=true;G.totalR++;G.mult*=2;log('庄家加注！底注倍率→x'+G.mult,'ac');startTurns()}
-function skipRaise(){if(actionLock)return;actionLock=true;clearTurnTimer();startTurns()}
+// ===== RAISE CHOICE SYSTEM =====
+function triggerRaise(pi,reason,cb){
+  G.raiseChoice={playerIdx:pi,reason,x2:true,x4:true};
+  G.raiseCallback=cb;G.phase='raiseChoice';
+  clearTimer();setTurnTimer(10);broadcast();
+  if(isAI(pi)){
+    setTimeout(()=>{
+      if(G.phase!=='raiseChoice')return;
+      if(Math.random()<.5)applyOpt('x2');
+      if(G.phase==='raiseChoice'&&Math.random()<.3)applyOpt('x4');
+      if(G.phase==='raiseChoice')doSkipRaise();
+    },1500+Math.random()*1000);
+  }
+}
+function applyOpt(opt){
+  if(!G.raiseChoice)return;
+  if(opt==='x2'&&G.raiseChoice.x2){G.mult*=2;G.raiseChoice.x2=false;log('加注 ×2 → x'+G.mult,'ac');broadcast()}
+  else if(opt==='x4'&&G.raiseChoice.x4){G.mult*=4;G.raiseChoice.x4=false;log('加注 ×4 → x'+G.mult,'ac');broadcast()}
+  if(G.raiseChoice&&!G.raiseChoice.x2&&!G.raiseChoice.x4)doSkipRaise();
+}
+function doSkipRaise(){
+  if(!G.raiseChoice)return;
+  clearTimer();let cb=G.raiseCallback;
+  G.raiseChoice=null;G.raiseCallback=null;G.phase='playing';broadcast();
+  if(cb==='autoF3')setTimeout(autoF3,100);else setTimeout(()=>{if(!chkEnd())advance()},100);
+}
 
-function doHit(){if(actionLock)return;actionLock=true;clearTurnTimer();
+// ===== CARD PROCESSING =====
+function doHit(){
+  if(actionLock)return;actionLock=true;clearTimer();
   let c=draw();if(!c){log('牌堆空！');endRound();return}
-  let p=G.players[G.cur];log(p.name+' 翻牌: '+cdisp(c));
+  let p=G.players[G.cur];log(p.name+' 翻牌: '+cname(c));
+  processCard(c,G.cur,'advance');
+}
+function doStay(){
+  if(actionLock)return;actionLock=true;clearTimer();
+  let p=G.players[G.cur];p.status='stayed';log(p.name+' 停牌','ok');broadcast();advance();
+}
+
+function processCard(c,pi,cb){
+  let p=G.players[pi];
   if(c.t==='n'){
-    if(p.hand.some(x=>x.t==='n'&&x.v===c.v)){
+    // Berserk special cards
+    if(c.sp==='b7'){
+      [...p.hand,...p.bonus].forEach(x=>G.disc.push(x));p.hand=[c];p.bonus=[];
+      log(p.name+' 霉运7！所有牌作废','ex');broadcast();cont(cb);return;
+    }
+    if(c.sp==='c0'){
+      p.hand.push(c);log(p.name+' 彩色0！积分归零','ac');broadcast();cont(cb);return;
+    }
+    // Dup check: c13 only dups with c13; regular dups with same-value regular
+    let dup=c.sp==='c13'
+      ?p.hand.find(x=>x.t==='n'&&x.sp==='c13')
+      :p.hand.find(x=>x.t==='n'&&x.v===c.v&&!x.sp);
+    if(dup){
+      dup.xx=true;p.hand.push({...c,xx:true});log(p.name+' 重复['+cname(c)+']！','ex');
       if(p.safe){
-        p.hand.push({t:'n',v:c.v,xx:true});log(p.name+' 翻出重复['+c.v+']！','ex');
-        broadcast();setTimeout(()=>{p.hand.pop();p.safe=false;log('✔ 安全牌生效，避免爆炸！','ok');broadcast();setTimeout(()=>advance(),600)},1000);return;
+        broadcast();setTimeout(()=>{
+          p.hand=p.hand.filter(x=>!x.xx);p.safe=false;log('✔ 安全牌生效！','ok');
+          triggerRaise(pi,'safety_saved',cb);
+        },1000);
+      }else{
+        broadcast();setTimeout(()=>{
+          p.status='busted';log(p.name+' 💥 爆炸！','ex');p.hand=[];p.bonus=[];
+          if(cb==='autoF3')G.f3r=0;
+          broadcast();setTimeout(()=>{if(G.pending.length)setTimeout(()=>procPend('advance'),300);else if(!chkEnd())advance()},600);
+        },1200);
       }
-      p.hand.forEach(x=>{if(x.t==='n'&&x.v===c.v)x.xx=true});
-      p.hand.push({t:'n',v:c.v,xx:true});log(p.name+' 翻出重复['+c.v+']！','ex');
-      broadcast();setTimeout(()=>{p.status='busted';log(p.name+' 💥 爆炸！','ex');p.hand=[];p.bonus=[];broadcast();setTimeout(()=>advance(),600)},1200);return;
+      return;
     }
     p.hand.push(c);
-    if(uniq(p).length>=7){log(p.name+' 七连翻！+15分！','ok');broadcast();setTimeout(()=>endRound(G.cur),600);return}
-  }else if(c.t==='b'){p.bonus.push(c)}
-  else{handleAction(c,G.cur);return}
-  broadcast();advance();
-}
-
-function doStay(){if(actionLock)return;actionLock=true;clearTurnTimer();let p=G.players[G.cur];p.status='stayed';log(p.name+' 停牌','ok');broadcast();advance()}
-
-function autoF3(){
-  if(G.f3r<=0){if(G.pending.length){setTimeout(procPend,300)}else{advance()}return}
-  let c=draw();if(!c){G.f3r=0;log('牌堆空');broadcast();advance();return}
-  let p=G.players[G.f3t];
-  log('[翻三张] '+p.name+' 翻出: '+cdisp(c));G.f3r--;
-  if(c.t==='n'){
-    if(p.hand.some(x=>x.t==='n'&&x.v===c.v)){
-      if(p.safe){
-        p.hand.push({t:'n',v:c.v,xx:true});log(p.name+' 翻出重复['+c.v+']！','ex');
-        broadcast();setTimeout(()=>{p.hand.pop();p.safe=false;log('✔ 安全牌生效，避免爆炸！','ok');broadcast();setTimeout(autoF3,800)},1000);return;
-      }else{
-        p.hand.forEach(x=>{if(x.t==='n'&&x.v===c.v)x.xx=true});
-        p.hand.push({t:'n',v:c.v,xx:true});log(p.name+' 翻出重复['+c.v+']！','ex');G.f3r=0;
-        broadcast();setTimeout(()=>{p.status='busted';log(p.name+' 💥 翻三张中爆炸！','ex');p.hand=[];p.bonus=[];broadcast();setTimeout(()=>advance(),600)},1200);return;
-      }
-    }else{
-      p.hand.push(c);
-      if(uniq(p).length>=7){G.f3r=0;log(p.name+' 翻三张达成七连翻！','ok');broadcast();setTimeout(()=>endRound(G.f3t),600);return}
+    if(uniqNums(p).length>=7){
+      log(p.name+' 七连翻！+15分','ok');G.mult*=2;log('七连翻 ×2 → x'+G.mult,'ac');
+      broadcast();setTimeout(()=>endRound(pi),600);return;
     }
-  }else if(c.t==='b'){p.bonus.push(c)}
-  else{G.pending.push({c,pi:G.f3t});log('【'+cname(c)+'】暂存','ac')}
-  broadcast();setTimeout(autoF3,800);
+    broadcast();cont(cb);
+  }else if(c.t==='b'||c.t==='sc'){
+    p.bonus.push(c);
+    if(c.v==='x2'){broadcast();triggerRaise(pi,'x2card',cb);return}
+    broadcast();cont(cb);
+  }else if(c.t==='a'||c.t==='fn'){
+    if(cb==='autoF3'){
+      // Defer action/fn cards during forced flip sequence
+      G.pending.push({c,pi});log('['+cname(c)+'] 暂存','ac');broadcast();setTimeout(autoF3,800);
+    }else{
+      handleFnCard(c,pi,cb);
+    }
+  }
 }
+function cont(cb){if(cb==='autoF3')setTimeout(autoF3,800);else advance()}
 
-function handleAction(c,from){
+function handleFnCard(c,from,cb){
   let act=G.players.map((p,i)=>({name:p.name,idx:i})).filter(x=>G.players[x.idx].status==='active');
-  if(c.v==='safety') act=act.filter(x=>!G.players[x.idx].safe);
-  if(c.v==='flip3') act=act.filter(x=>!(G.f3r>0&&G.f3t===x.idx));
-  if(!act.length){log('['+cname(c)+'] 无可用目标，作废','ac');afterAct();return}
-  G.targetPending={card:c,from,targets:act};
-  broadcast();aiCheckTarget();
+  if(c.v==='safety')act=act.filter(x=>!G.players[x.idx].safe);
+  if(!act.length){log('['+cname(c)+'] 无目标，作废','ac');G.disc.push(c);cont(cb);return}
+  G.targetPending={card:c,from,targets:act,cb};broadcast();aiCheckTarget();
 }
-
 function aiCheckTarget(){
   if(!G.targetPending)return;
-  let from=G.targetPending.from;
-  if(!isAI(from))return;
-  let targets=G.targetPending.targets;
+  let from=G.targetPending.from;if(!isAI(from))return;
+  let{targets,card:c}=G.targetPending;
   setTimeout(()=>{
     if(!G.targetPending||G.targetPending.from!==from)return;
-    let card=G.targetPending.card;let ti;
-    if(card.v==='safety'){
-      let self=targets.find(t=>t.idx===from);
-      ti=self?from:targets[Math.floor(Math.random()*targets.length)].idx;
-    }else{
-      let others=targets.filter(t=>t.idx!==from);
-      ti=others.length?others[Math.floor(Math.random()*others.length)].idx:targets[0].idx;
-    }
+    let o=targets.filter(t=>t.idx!==from);
+    let ti=c.v==='safety'?(targets.find(t=>t.idx===from)?from:targets[0].idx):(o.length?o[0|Math.random()*o.length].idx:targets[0].idx);
     selectTarget(ti);
   },1000+Math.random()*1000);
 }
-
 function selectTarget(ti){
   if(!G.targetPending)return;
-  let{card:c,from}=G.targetPending;
+  let{card:c,from,cb}=G.targetPending;
   if(!G.targetPending.targets.some(t=>t.idx===ti))return;
-  let who=G.players[from].name;
   G.targetPending=null;
-  if(c.v==='freeze'){G.players[ti].status='stayed';log(who+' 对 '+G.players[ti].name+' 使用冻结','ac');broadcast();setTimeout(afterAct,100)}
-  else if(c.v==='flip3'){log(who+' 对 '+G.players[ti].name+' 使用翻三张','ac');G.f3r=3;G.f3t=ti;broadcast();setTimeout(autoF3,800)}
-  else if(c.v==='safety'){G.players[ti].safe=true;log(who+' 对 '+G.players[ti].name+' 使用安全牌','ac');broadcast();setTimeout(afterAct,100)}
+  let who=G.players[from].name,whom=G.players[ti].name;
+  if(c.v==='freeze'){
+    G.players[ti].status='stayed';log(who+' 冻结 '+whom,'ac');broadcast();setTimeout(()=>afterAct(cb),100);
+  }else if(c.v==='flip3'||c.v==='flip4'){
+    let n=c.v==='flip4'?4:3;G.f3r=n;G.f3t=ti;G.f3type=n;
+    log(who+' 对'+whom+' 使用'+cname(c),'ac');broadcast();setTimeout(autoF3,800);
+  }else if(c.v==='safety'){
+    G.players[ti].safe=true;log(who+' 给'+whom+' 安全牌','ac');broadcast();setTimeout(()=>afterAct(cb),100);
+  }else if(c.v==='flip1stop'){
+    G.f3r=1;G.f3t=ti;G.f3type=1;G.flip1stop=true;
+    log(who+' 对'+whom+' 摸一张停','ac');broadcast();setTimeout(autoF3,800);
+  }else if(c.v==='steal'){
+    let cards=G.players[ti].hand.filter(x=>x.t==='n');
+    if(cards.length){let s=cards[0|Math.random()*cards.length];G.players[ti].hand=G.players[ti].hand.filter(x=>x!==s);G.players[from].hand.push(s);log(who+' 偷['+cname(s)+']自'+whom,'ac')}
+    else log(who+' 偷牌失败','ac');
+    broadcast();setTimeout(()=>afterAct(cb),100);
+  }else if(c.v==='swap'){
+    let fc=G.players[from].hand.filter(x=>x.t==='n'),tc=G.players[ti].hand.filter(x=>x.t==='n');
+    if(fc.length&&tc.length){
+      let f=fc[0|Math.random()*fc.length],t2=tc[0|Math.random()*tc.length];
+      G.players[from].hand=G.players[from].hand.filter(x=>x!==f);G.players[ti].hand=G.players[ti].hand.filter(x=>x!==t2);
+      G.players[from].hand.push(t2);G.players[ti].hand.push(f);
+      log(who+' 用['+cname(f)+']换'+whom+'的['+cname(t2)+']','ac');
+    }else log(who+' 换牌失败','ac');
+    broadcast();setTimeout(()=>afterAct(cb),100);
+  }else if(c.v==='discard'){
+    let cards=G.players[ti].hand.filter(x=>x.t==='n');
+    if(cards.length){let d=cards[0|Math.random()*cards.length];G.players[ti].hand=G.players[ti].hand.filter(x=>x!==d);G.disc.push(d);log(who+' 迫'+whom+'弃['+cname(d)+']','ac')}
+    else log(who+' 弃牌失败','ac');
+    broadcast();setTimeout(()=>afterAct(cb),100);
+  }
+}
+function afterAct(cb){
+  if(G.pending.length)setTimeout(()=>procPend(cb),300);
+  else if(cb==='autoF3')setTimeout(autoF3,200);
+  else if(!chkEnd())advance();
+}
+function procPend(cb){
+  if(!G.pending.length){if(!chkEnd())advance();return}
+  let a=G.pending.shift();handleFnCard(a.c,a.pi,cb||'advance');
 }
 
-function afterAct(){if(G.pending.length){setTimeout(procPend,300)}else if(G.phase==='playing'){if(!chkEnd())advance()}else{startTurns()}}
-function procPend(){if(!G.pending.length){if(!chkEnd())advance();return}let a=G.pending.shift();handleAction(a.c,a.pi)}
+function autoF3(){
+  if(G.f3r<=0){
+    // Auto-raise for berserk flip3/flip4 if target survived
+    if(G.gameMode==='berserk'&&G.f3type>=3&&G.f3t>=0&&G.players[G.f3t]&&G.players[G.f3t].status!=='busted'){
+      let m=G.f3type===4?4:3;G.mult*=m;log('翻'+G.f3type+'张成功！×'+m+' → x'+G.mult,'ac');broadcast();
+    }
+    if(G.flip1stop&&G.f3t>=0){
+      let p=G.players[G.f3t];if(p&&p.status==='active'){p.status='stayed';log(p.name+' 摸一张停冻结','ac')}
+      G.flip1stop=false;broadcast();
+    }
+    G.f3t=-1;
+    if(G.pending.length)setTimeout(()=>procPend('advance'),300);else if(!chkEnd())advance();
+    return;
+  }
+  let c=draw();if(!c){G.f3r=0;log('牌堆空');broadcast();if(!chkEnd())advance();return}
+  let p=G.players[G.f3t];
+  let tag=G.f3type===1?'摸一张停':G.f3type===4?'翻四张':'翻三张';
+  log('['+tag+'] '+p.name+' 翻出: '+cname(c));G.f3r--;
+  processCard(c,G.f3t,'autoF3');
+}
 
-function endRound(f7){clearTurnTimer();
-  if(f7===undefined)f7=-1;G.phase='roundEnd';
-  G.players.forEach((p,i)=>{if(p.status!=='busted'){p.rscore=calcScore(p,i===f7);p.total+=p.rscore}else{p.rscore=0}
-  p.hand.forEach(c=>G.disc.push(c));p.bonus.forEach(c=>G.disc.push(c))});
+function endRound(f7){
+  clearTimer();if(f7===undefined)f7=-1;G.phase='roundEnd';
+  G.players.forEach((p,i)=>{
+    if(p.status!=='busted'){p.rscore=calcScore(p,i===f7);p.total+=p.rscore}else p.rscore=0;
+    p.hand.forEach(c=>G.disc.push(c));p.bonus.forEach(c=>G.disc.push(c));
+  });
   if(G.players.some(p=>p.total>=WIN)){showEnd();return}
-  let best=-1,bi=G.dealer;G.players.forEach((p,i)=>{if(p.rscore>best){best=p.rscore;bi=i}});G.dealer=bi;
-  G.f7winner=f7;broadcast();setTimeout(()=>{if(G.phase==='roundEnd')newRound()},3000);
+  let best=-1,bi=G.dealer;G.players.forEach((p,i)=>{if(p.rscore>best){best=p.rscore;bi=i}});
+  G.dealer=bi;G.f7winner=f7;broadcast();setTimeout(()=>{if(G.phase==='roundEnd')newRound()},3000);
 }
 
 function showEnd(){
   let sorted=[...G.players].sort((a,b)=>b.total-a.total);
-  let pool=G.players.length*ANTE*G.mult;
-  let n=G.players.length;let rats=PR[n]||PR[6];
-  let totalPaid=0;
-  sorted.forEach((p,i)=>{if(i===0)return;let r=rats[i-1]||rats[rats.length-1];let owe=Math.round(pool*r);
-    if(p.beans<owe){p._bk=true;p._bc=-p.beans;totalPaid+=p.beans;p.beans=0}
-    else{p._bk=false;p._bc=-owe;totalPaid+=owe;p.beans-=owe}});
-  sorted[0]._bc=totalPaid;sorted[0].beans+=totalPaid;sorted[0]._bk=false;
+  let n=G.players.length,pool=n*ANTE*G.mult,sysA=Math.round(n*ANTE*.03);
+  let rats=PR[n]||PR[6];
+  sorted.forEach((p,i)=>{
+    if(i===0)return;
+    let coeff=rats[i-1]||rats[rats.length-1],owe=Math.round(ANTE*G.mult*coeff);
+    if(p.beans<owe){p._bk=true;p._bc=-p.beans;p.beans=0}
+    else{p._bk=false;p._bc=-owe;p.beans-=owe}
+  });
+  sorted[0]._bc=pool-sysA;sorted[0].beans+=pool-sysA;sorted[0]._bk=false;
   G.phase='gameEnd';G.finalRanking=sorted;broadcast();
 }
 
 function restartGame(){
   seats=seats.filter(s=>!s.ai);
-  let aiNeeded=roomSize-seats.length;let aiIdx=0;
-  for(let i=0;i<aiNeeded;i++){while(seats.some(s=>s.name===AI_NAMES[aiIdx]))aiIdx++;seats.push({name:AI_NAMES[aiIdx],ai:true,id:'ai_'+aiIdx});aiIdx++}
-  G.players=seats.map(s=>({name:s.name,hand:[],bonus:[],total:0,rscore:0,beans:BEANS-ANTE,status:'active',safe:false,ai:!!s.ai}));
-  G.deck=shuf(mkDeck());G.disc=[];G.round=0;G.dealer=0;G.totalR=0;G.mult=1;G.log=[];G.pending=[];G.targetPending=null;
+  let ai=0;while(seats.length<roomSize){while(seats.some(s=>s.name===AI[ai]))ai++;seats.push({name:AI[ai],ai:true,id:'ai_'+ai});ai++}
+  G.players=seats.map(mkPlayer);
+  G.deck=shuf(G.gameMode==='berserk'?mkBerserkDeck():mkClassicDeck());
+  G.disc=[];G.round=0;G.dealer=0;G.mult=1;G.log=[];G.pending=[];
+  G.targetPending=null;G.raiseChoice=null;G.raiseCallback=null;G.flip1stop=false;
   newRound();
 }
+function backToLobby(){seats=seats.filter(s=>!s.ai);G.phase='lobby';G.log=[];G.targetPending=null;G.raiseChoice=null;broadcast()}
 
-function backToLobby(){seats=seats.filter(s=>!s.ai);G.phase='lobby';G.log=[];G.targetPending=null;broadcast()}
-
-wss.on('connection',(ws)=>{
+// ===== WEBSOCKET =====
+wss.on('connection',ws=>{
   clients.add(ws);ws.seat=-1;
   ws.send(JSON.stringify({type:'state',G,seats,roomSize,hostSeat}));
-  ws.on('message',(raw)=>{
+  ws.on('message',raw=>{
     let msg;try{msg=JSON.parse(raw)}catch(e){return}
-    if(msg.type==='rejoin'){
-      let idx=seats.findIndex(s=>s.name===msg.name&&!s.ai);
-      if(idx>=0){ws.seat=idx;seats[idx].dc=false;ws.send(JSON.stringify({type:'seated',seat:idx}));ws.send(JSON.stringify({type:'state',G,seats,roomSize,hostSeat}));broadcast()}
+    const t=msg.type;
+    if(t==='rejoin'){
+      let i=seats.findIndex(x=>x.name===msg.name&&!x.ai);
+      if(i>=0){ws.seat=i;seats[i].dc=false;ws.send(JSON.stringify({type:'seated',seat:i}));ws.send(JSON.stringify({type:'state',G,seats,roomSize,hostSeat}));broadcast()}
       return;
-    }if(msg.type==='join'){
-      if(G.phase!=='lobby'){ws.send(JSON.stringify({type:'info',text:'游戏进行中，请等待本局结束'}));return}
+    }
+    if(t==='join'){
+      if(G.phase!=='lobby'){ws.send(JSON.stringify({type:'info',text:'游戏进行中'}));return}
       if(seats.length>=12){ws.send(JSON.stringify({type:'info',text:'房间已满'}));return}
-      if(seats.some(s=>s.name===msg.name)){ws.send(JSON.stringify({type:'info',text:'名称已存在'}));return}
-      seats.push({name:msg.name,ai:false,id:Date.now()+''+Math.random()});
-      ws.seat=seats.length-1;
-      ws.send(JSON.stringify({type:'seated',seat:ws.seat}));
-      broadcast();
-    }else if(msg.type==='setRoomSize'){
-      if(ws.seat!==hostSeat)return;
-      let s=parseInt(msg.size);if(s>=2&&s<=12){roomSize=s;G.roomSize=roomSize}broadcast();
-    }else if(msg.type==='start'){
-      if(ws.seat!==hostSeat||G.phase!=='lobby'||seats.length<1)return;startGame();
-    }else if(msg.type==='hit'){
-      if(G.phase!=='playing'||G.f3r>0||ws.seat!==G.cur)return;doHit();
-    }else if(msg.type==='stay'){
-      if(G.phase!=='playing'||G.f3r>0||ws.seat!==G.cur)return;doStay();
-    }else if(msg.type==='raise'){
-      if(G.phase!=='raise'||ws.seat!==G.dealer)return;doRaise();
-    }else if(msg.type==='skip'){
-      if(G.phase!=='raise'||ws.seat!==G.dealer)return;skipRaise();
-    }else if(msg.type==='target'){
-      if(!G.targetPending||ws.seat!==G.targetPending.from)return;selectTarget(msg.idx);
-    }else if(msg.type==='nextRound'){
-      if(ws.seat!==hostSeat||G.phase!=='roundEnd')return;newRound();
-    }else if(msg.type==='restart'){
-      if(ws.seat!==hostSeat)return;restartGame();
-    }else if(msg.type==='kick'){
+      if(seats.some(x=>x.name===msg.name)){ws.send(JSON.stringify({type:'info',text:'名称已存在'}));return}
+      seats.push({name:msg.name,ai:false,id:Date.now()+''+Math.random()});ws.seat=seats.length-1;
+      ws.send(JSON.stringify({type:'seated',seat:ws.seat}));broadcast();
+    }else if(t==='setRoomSize'){
+      if(ws.seat!==hostSeat)return;let sz=parseInt(msg.size);if(sz>=2&&sz<=12){roomSize=sz;G.roomSize=sz}broadcast();
+    }else if(t==='setMode'){
       if(ws.seat!==hostSeat||G.phase!=='lobby')return;
-      let ki=msg.seat;
-      if(ki<0||ki>=seats.length||ki===hostSeat||seats[ki].ai)return;
-      // Notify kicked player
+      if(msg.mode==='classic'||msg.mode==='berserk'){G.gameMode=msg.mode;broadcast()}
+    }else if(t==='start'){
+      if(ws.seat!==hostSeat||G.phase!=='lobby'||!seats.length)return;startGame();
+    }else if(t==='hit'){
+      if(G.phase!=='playing'||G.f3r>0||ws.seat!==G.cur||G.targetPending)return;doHit();
+    }else if(t==='stay'){
+      if(G.phase!=='playing'||G.f3r>0||ws.seat!==G.cur)return;
+      if(G.gameMode==='berserk'){ws.send(JSON.stringify({type:'info',text:'狂暴模式不能主动停牌！'}));return}
+      doStay();
+    }else if(t==='raiseOpt'){
+      if(G.phase!=='raiseChoice'||!G.raiseChoice||ws.seat!==G.raiseChoice.playerIdx)return;applyOpt(msg.opt);
+    }else if(t==='skipRaise'){
+      if(G.phase!=='raiseChoice'||!G.raiseChoice||ws.seat!==G.raiseChoice.playerIdx)return;doSkipRaise();
+    }else if(t==='target'){
+      if(!G.targetPending||ws.seat!==G.targetPending.from)return;selectTarget(msg.idx);
+    }else if(t==='nextRound'){
+      if(ws.seat!==hostSeat||G.phase!=='roundEnd')return;newRound();
+    }else if(t==='restart'){
+      if(ws.seat!==hostSeat)return;restartGame();
+    }else if(t==='kick'){
+      if(ws.seat!==hostSeat||G.phase!=='lobby')return;
+      let ki=msg.seat;if(ki<0||ki>=seats.length||ki===hostSeat||seats[ki].ai)return;
       clients.forEach(c=>{if(c.seat===ki){c.send(JSON.stringify({type:'kicked'}));c.seat=-1}});
-      seats.splice(ki,1);
-      clients.forEach(c=>{if(c.seat>ki)c.seat--});
-      if(hostSeat>ki)hostSeat--;
-      broadcast();
-    }else if(msg.type==='backToLobby'){
+      seats.splice(ki,1);clients.forEach(c=>{if(c.seat>ki)c.seat--});if(hostSeat>ki)hostSeat--;broadcast();
+    }else if(t==='backToLobby'){
       if(ws.seat!==hostSeat)return;backToLobby();
     }
   });
@@ -295,18 +407,11 @@ wss.on('connection',(ws)=>{
     clients.delete(ws);
     if(ws.seat>=0&&ws.seat<seats.length&&!seats[ws.seat].ai){
       let si=ws.seat;
-      if(G.phase==='lobby'){
-        seats.splice(si,1);
-        clients.forEach(c=>{if(c.seat>si)c.seat--});
-        if(hostSeat>=seats.length)hostSeat=0;
-        broadcast();
-      } else {
-        seats[si].dc=true;
-        broadcast();
-      }
+      if(G.phase==='lobby'){seats.splice(si,1);clients.forEach(c=>{if(c.seat>si)c.seat--});if(hostSeat>=seats.length)hostSeat=0;broadcast()}
+      else{seats[si].dc=true;broadcast()}
     }
   });
 });
 
 const PORT=process.env.PORT||3000;
-server.listen(PORT,()=>{console.log('Flip7 server running on port '+PORT)});
+server.listen(PORT,()=>console.log('Flip7 server running on port '+PORT));

@@ -17,6 +17,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .lobby-box h3{color:var(--pri2);margin-bottom:10px}.seat-list{list-style:none;margin:10px 0}.seat-list li{padding:8px 12px;border-bottom:1px solid var(--bg3)}.seat-list li.me{background:var(--bg3);border-radius:8px}
 .join-area{display:flex;gap:10px;margin-top:10px}.join-area input{flex:1;padding:10px 14px;border-radius:var(--r);border:2px solid var(--bg3);background:var(--bg2);color:var(--txt);font-size:16px;outline:none}
 .rs-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:12px 0}.rs-row button{width:40px;height:40px;border-radius:8px;border:2px solid var(--bg3);background:var(--bg2);color:var(--txt);font-weight:700;cursor:pointer}.rs-row button.sel{border-color:var(--pri);background:var(--pri)}
+.mode-row{display:flex;gap:8px;margin:8px 0}.mode-btn{flex:1;padding:10px;border-radius:var(--r);border:2px solid var(--bg3);background:var(--bg2);color:var(--txt);font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;text-align:center}.mode-btn.sel-classic{border-color:var(--pri);background:var(--pri);color:#fff}.mode-btn.sel-berserk{border-color:#e17055;background:#e17055;color:#fff}
+.mode-desc{font-size:11px;color:var(--dim);margin-top:6px;line-height:1.5}
 .host-only{display:none}.host-only.show{display:block}#hostEnd.host-only.show{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
 #game{padding:10px;gap:8px}.ghdr{width:100%;max-width:700px;display:flex;justify-content:space-between;align-items:center;background:var(--bg2);border-radius:var(--r);padding:10px 16px;font-size:13px}
 .ghdr .gi{display:flex;flex-direction:column;align-items:center;gap:2px}.ghdr .gl2{color:var(--dim);font-size:11px}.ghdr .gv{font-weight:700}
@@ -27,11 +29,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .player-box .pcards{display:flex;flex-wrap:wrap;gap:4px;min-height:40px}.player-box .ptags{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
 .cd{width:36px;height:50px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;box-shadow:0 1px 4px rgba(0,0,0,.2);animation:su .3s}
 .cn{background:#fff;color:#333}.cb{background:linear-gradient(135deg,#f8e71c,#f5a623);color:#333}.ca{color:#fff;font-size:9px;text-align:center;line-height:1.1;padding:2px}
-.ca.fr{background:linear-gradient(135deg,#74b9ff,#0984e3)}.ca.f3{background:linear-gradient(135deg,#fd79a8,#e84393)}.ca.sf{background:linear-gradient(135deg,#55efc4,#00b894)}
+.ca.fr{background:linear-gradient(135deg,#74b9ff,#0984e3)}.ca.f3{background:linear-gradient(135deg,#fd79a8,#e84393)}.ca.sf{background:linear-gradient(135deg,#55efc4,#00b894)}.ca.fn{background:linear-gradient(135deg,#a29bfe,#6c5ce7)}
+.csc{background:linear-gradient(135deg,#e17055,#d63031);color:#fff;font-size:10px;text-align:center;line-height:1.2;padding:2px}
+.cc0{background:linear-gradient(135deg,#a29bfe,#fd79a8);color:#fff}.cb7{background:#2d3436;color:var(--red)}.cc13{background:linear-gradient(135deg,#f9ca24,#f0932b);color:#333}
 .tg{padding:2px 6px;border-radius:4px;font-size:9px;font-weight:600}.tg.bonus{background:rgba(245,166,35,.2);color:var(--ylw)}.tg.safe{background:rgba(39,174,96,.2);color:var(--grn)}
 .tg.status-stayed{background:rgba(39,174,96,.15);color:var(--grn)}.tg.status-busted{background:rgba(231,76,60,.15);color:var(--red)}
 .aa{width:100%;max-width:700px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;padding:8px 0}.turn-info{width:100%;max-width:700px;background:var(--bg3);border-radius:var(--r);padding:10px 16px;text-align:center;font-size:14px;font-weight:600}.turn-info .highlight{color:var(--ylw)}
-.ov{position:fixed;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;z-index:100;background:rgba(0,0,0,.85)}.ov h3{font-size:20px}.tl{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}.tb{padding:14px 20px;border-radius:var(--r);background:var(--bg2);border:2px solid var(--bg3);color:var(--txt);font-size:15px;cursor:pointer}.tb:hover{border-color:var(--pri)}
+.ov{position:fixed;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:100;background:rgba(0,0,0,.85)}.ov h3{font-size:20px}.tl{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}.tb{padding:14px 20px;border-radius:var(--r);background:var(--bg2);border:2px solid var(--bg3);color:var(--txt);font-size:15px;cursor:pointer}.tb:hover{border-color:var(--pri)}
+.raise-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}.rb{padding:14px 28px;border-radius:var(--r);font-size:17px;font-weight:700;border:none;cursor:pointer;transition:all .2s}.rb:active{transform:scale(.95)}.rb-x2{background:var(--ylw);color:#333}.rb-x4{background:#e17055;color:#fff}.rb-skip{background:0 0;border:2px solid var(--dim);color:var(--dim)}
 .glog{width:100%;max-width:700px;background:var(--bg2);border-radius:var(--r);padding:10px;max-height:160px;overflow-y:auto}.le{font-size:11px;color:var(--dim);padding:2px 0}.le.ex{color:var(--red)}.le.ok{color:var(--grn)}.le.ac{color:var(--pri2)}
 .result-scr{justify-content:center;gap:20px;text-align:center}.rt{width:100%;max-width:500px;border-collapse:collapse}.rt th,.rt td{padding:10px 12px;text-align:center;border-bottom:1px solid var(--bg3)}.rt th{color:var(--dim);font-size:13px}.rt .br{color:var(--red);opacity:.7}.rt .wr{color:var(--ylw);font-weight:700}.rt .fr{color:var(--grn);font-weight:700}
 .ftit{font-size:28px;font-weight:700;color:var(--ylw)}.bc{font-size:13px}.bc.pos{color:var(--grn)}.bc.neg{color:var(--red)}
@@ -45,8 +50,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .scoreboard{flex:1;min-width:0;background:var(--bg2);border-radius:var(--r);padding:10px;max-height:160px;overflow-y:auto;font-size:11px}
 .scoreboard h4{font-size:11px;color:var(--pri2);margin-bottom:6px}
 .sb-row{display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid rgba(255,255,255,.05)}.sb-row:last-child{border:none}
-.sb-name{color:var(--txt);max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.sb-score{color:var(--ylw);font-weight:700}.sb-total{color:var(--dim)}
+.sb-name{color:var(--txt);max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sb-score{color:var(--ylw);font-weight:700}.sb-total{color:var(--dim)}
+.berserk-badge{display:inline-block;background:linear-gradient(135deg,#e17055,#d63031);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;margin-left:6px}
 @media(max-width:600px){.bottom-row{flex-direction:column}.scoreboard{width:100%;max-height:100px}}@media(max-width:480px){.aa{display:none!important}}
 </style></head><body>
 <div id="specBar" class="spec-bar">观战中 — 游戏进行中，请等待本局结束后加入</div>
@@ -56,67 +61,325 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 <p class="sub">多人联机 翻转牌</p>
 <p id="connSt" class="conn">连接中…</p>
 <div class="lobby-box"><h3>玩家列表 (<span id="seatCnt">0</span>/<span id="roomMax">4</span>)</h3><ul id="seatList" class="seat-list"></ul>
-<div id="joinBlock"><div class="join-area"><input id="nameIn" maxlength="12" placeholder="输入昵称"><button class="btn bp" id="btnJoin">加入</button></div></div><div id="waitMsg" style="display:none"><p style="color:var(--ylw);font-weight:700;padding:12px 0">对局进行中，请耐心等待…</p></div>
-<div id="hostLobby" class="host-only"><h3 style="margin-top:16px">房间人数</h3><div id="rsBtns" class="rs-row"></div><button class="btn bl bp" id="btnStart" style="margin-top:16px;width:100%">开始游戏</button></div>
+<div id="joinBlock"><div class="join-area"><input id="nameIn" maxlength="12" placeholder="输入昵称"><button class="btn bp" id="btnJoin">加入</button></div></div>
+<div id="waitMsg" style="display:none"><p style="color:var(--ylw);font-weight:700;padding:12px 0">对局进行中，请耐心等待…</p></div>
+<div id="hostLobby" class="host-only">
+  <h3 style="margin-top:16px">游戏模式</h3>
+  <div class="mode-row">
+    <div class="mode-btn" id="modeClassic" onclick="setMode('classic')">🃏 经典玩法</div>
+    <div class="mode-btn" id="modeBerserk" onclick="setMode('berserk')">⚔️ 狂暴玩法</div>
+  </div>
+  <p id="modeDesc" class="mode-desc"></p>
+  <h3 style="margin-top:16px">房间人数</h3><div id="rsBtns" class="rs-row"></div>
+  <button class="btn bl bp" id="btnStart" style="margin-top:16px;width:100%">开始游戏</button>
+</div>
 </div></section>
 <section id="game" class="scr"><div id="gh" class="ghdr"></div><div id="ti" class="turn-info"></div><div id="pa" class="players-area"></div><div id="aa" class="aa"></div><div id="floatAA" class="action-float" style="display:none"></div><div class="bottom-row"><div id="glog" class="glog"></div><div id="scoreboard" class="scoreboard"><h4>积分榜</h4><div id="sbBody"></div></div></div><div id="gameHostBtns" class="host-only" style="margin-top:8px;opacity:.7;gap:10px"><button class="btn bo" style="font-size:12px;padding:6px 14px" id="btnRestartG">重开本局</button><button class="btn bo" style="font-size:12px;padding:6px 14px" id="btnLobbyG">返回房间</button></div></section>
 <section id="roundEnd" class="scr result-scr"><h2 class="ftit" id="ret"></h2><table class="rt" id="rrt"></table>
 <div id="hostRound" class="host-only"><button class="btn bp bl" id="btnNext">下一回合</button></div></section>
 <section id="gameEnd" class="scr result-scr"><h2 class="ftit" id="wn"></h2><p id="ws" class="sub"></p><table class="rt" id="frt"></table>
-<div id="hostEnd" class="host-only">
-<button class="btn bp bl" id="btnRestart">重新开始</button><button class="btn bo bl" id="btnLobby">返回大厅</button></div></section>
+<div id="hostEnd" class="host-only"><button class="btn bp bl" id="btnRestart">重新开始</button><button class="btn bo bl" id="btnLobby">返回大厅</button></div></section>
+<!-- Target selection overlay -->
 <div id="tov" class="ov" style="display:none;z-index:10000"><h3 id="tovT"></h3><div id="tovL" class="tl"></div></div>
+<!-- Raise choice overlay -->
+<div id="rcov" class="ov" style="display:none;z-index:10001">
+  <h3 id="rcT" style="text-align:center"></h3>
+  <p id="rcSub" style="color:var(--dim);font-size:13px;text-align:center"></p>
+  <div id="rcBtns" class="raise-btns"></div>
+  <button class="rb rb-skip" id="rcSkip">确认 / 跳过</button>
+</div>
 <script>
 (function(){
-var WIN=200,ANTE=100,MAXR=3;
+var WIN=200,ANTE=100;
 var ws,mySeat=-1,hostSeat=0,roomSize=4,seats=[],G=null,actionSent=false;
 var selRoom=4;
 function $(id){return document.getElementById(id)}
 function send(o){if(ws&&ws.readyState===1)ws.send(JSON.stringify(o))}
-function showScr(id){document.querySelectorAll(".scr").forEach(function(s){s.classList.remove("act")});var el=$(id);if(el)el.classList.add("act")}
-function toast(t){var el=$("toast");el.textContent=t;el.classList.add("show");setTimeout(function(){el.classList.remove("show")},2800)}
+function showScr(id){document.querySelectorAll('.scr').forEach(function(s){s.classList.remove('act')});var el=$(id);if(el)el.classList.add('act')}
+function toast(t){var el=$('toast');el.textContent=t;el.classList.add('show');setTimeout(function(){el.classList.remove('show')},2800)}
 function isHost(){return mySeat===hostSeat&&mySeat>=0}
-function cname(c){if(c.t==="n")return String(c.v);if(c.t==="b")return c.v;return{freeze:"\u51bb\u7ed3",flip3:"\u7ffb\u4e09\u5f20",safety:"\u5b89\u5168\u724c"}[c.v]}
-function calcLive(p){if(p.status==="busted")return 0;var ns=0,m=1,ba=0;p.hand.forEach(function(c){if(c.t==="n")ns+=c.v});p.bonus.forEach(function(b){if(b.v==="x2")m*=2;else ba+=parseInt(b.v,10)});return ns*m+ba}
-function rcard(c){if(c.xx)return'<div class="cd cn" style="border:2px solid var(--red)">'+c.v+"</div>";if(c.t==="n")return'<div class="cd cn">'+c.v+"</div>";if(c.t==="b")return'<div class="cd cb">'+c.v+"</div>";var sc=c.v==="freeze"?"fr":c.v==="flip3"?"f3":"sf";return'<div class="cd ca '+sc+'">'+cname(c)+"</div>"}
-function buildRs(){var h="";for(var n=2;n<=12;n++)h+='<button type="button" data-n="'+n+'" class="'+(n===selRoom?"sel":"")+'">'+n+"</button>";$("rsBtns").innerHTML=h;$("rsBtns").querySelectorAll("button").forEach(function(b){b.onclick=function(){selRoom=parseInt(b.dataset.n,10);buildRs();if(isHost())send({type:"setRoomSize",size:selRoom})}})}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+function cname(c){
+  if(c.t==='n'){if(c.sp==='c0')return'彩色0';if(c.sp==='b7')return'霉运7';if(c.sp==='c13')return'彩色13';return''+c.v}
+  if(c.t==='b'||c.t==='sc')return c.v;
+  return{freeze:'冻结',flip3:'翻三张',safety:'安全牌',flip4:'翻四张',steal:'偷牌',swap:'换牌',flip1stop:'摸一张停',discard:'弃牌'}[c.v]||c.v;
+}
+
+function calcLive(p){
+  if(p.status==='busted')return 0;
+  if(G&&G.gameMode==='berserk'){
+    var hasC0=p.hand.some(function(c){return c.t==='n'&&c.sp==='c0'});
+    var uniq=new Set();p.hand.forEach(function(c){if(c.t==='n')uniq.add(c.v)});
+    var ns=hasC0&&uniq.size<7?0:p.hand.reduce(function(s,c){return c.t==='n'?s+c.v:s},0);
+    var mul=1,add=0;
+    p.bonus.forEach(function(b){if(b.v==='x2')mul*=2;else if(b.v==='÷2')mul/=2;else{var n=parseInt(b.v,10);if(!isNaN(n))add+=n}});
+    return Math.max(0,Math.floor(ns*mul+add));
+  }
+  var ns=0,m=1,ba=0;
+  p.hand.forEach(function(c){if(c.t==='n')ns+=c.v});
+  p.bonus.forEach(function(b){if(b.v==='x2')m*=2;else ba+=parseInt(b.v,10)});
+  return ns*m+ba;
+}
+
+function rcard(c){
+  if(!c)return'';
+  var extra=c.xx?' style="border:2px solid var(--red)"':'';
+  if(c.t==='n'){
+    if(c.sp==='c0')return'<div class="cd cc0"'+extra+'>彩0</div>';
+    if(c.sp==='b7')return'<div class="cd cb7"'+extra+'>霉7</div>';
+    if(c.sp==='c13')return'<div class="cd cc13"'+extra+'>13+</div>';
+    return'<div class="cd cn"'+extra+'>'+c.v+'</div>';
+  }
+  if(c.t==='b')return'<div class="cd cb">'+c.v+'</div>';
+  if(c.t==='sc')return'<div class="cd csc">'+c.v+'</div>';
+  var sc=c.v==='freeze'?'fr':c.v==='flip3'||c.v==='flip4'?'f3':c.v==='safety'?'sf':'fn';
+  return'<div class="cd ca '+sc+'">'+cname(c)+'</div>';
+}
+
+// Mode selector
+window.setMode=function(m){send({type:'setMode',mode:m})}
+function updateModeUI(){
+  if(!G)return;
+  var m=G.gameMode||'classic';
+  $('modeClassic').className='mode-btn'+(m==='classic'?' sel-classic':'');
+  $('modeBerserk').className='mode-btn'+(m==='berserk'?' sel-berserk':'');
+  $('modeDesc').innerHTML=m==='berserk'
+    ?'⚔️ 狂暴：121张牌，含变分牌和功能牌，不能主动停牌，先到200分获胜'
+    :'🃏 经典：同数字翻牌，翻出7张不同数字获胜，先到200分获胜';
+}
+
+function buildRs(){
+  var h='';for(var n=2;n<=12;n++)h+='<button type="button" data-n="'+n+'" class="'+(n===selRoom?'sel':'')+'" >'+n+'</button>';
+  $('rsBtns').innerHTML=h;
+  $('rsBtns').querySelectorAll('button').forEach(function(b){b.onclick=function(){selRoom=parseInt(b.dataset.n,10);buildRs();if(isHost())send({type:'setRoomSize',size:selRoom})}})
+}
 buildRs();
-function renderLobby(){$("roomMax").textContent=roomSize;selRoom=roomSize;$("seatCnt").textContent=seats.length;var ul=$("seatList");ul.innerHTML="";seats.forEach(function(s,i){var li=document.createElement("li");if(i===mySeat)li.classList.add("me");var pre=(s.ai?"\ud83e\udd16 ":"")+(i===hostSeat?"\ud83d\udc51 ":"");li.textContent=pre+s.name;if(isHost()&&i!==hostSeat&&!s.ai){var kb=document.createElement("button");kb.textContent="\u2715";kb.style.cssText="float:right;background:none;border:1px solid var(--red);color:var(--red);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:11px";kb.dataset.idx=i;kb.onclick=function(){send({type:"kick",seat:parseInt(this.dataset.idx,10)})};li.appendChild(kb)}ul.appendChild(li)});var joined=mySeat>=0;$("joinBlock").style.display=joined?"none":"block";var hh=isHost()&&G&&G.phase==="lobby";$("hostLobby").classList.toggle("show",!!hh);$("btnStart").disabled=!joined||seats.length<1}
-function renderGame(){if(!G)return;var ghb=$("gameHostBtns");if(ghb)ghb.classList.toggle("show",isHost());var pot=G.players.length*ANTE*G.mult;$("gh").innerHTML='<div class="gi"><span class="gl2">\u724c\u5806</span><span class="gv">'+G.deck.length+'\u5f20</span></div><div class="gi"><span class="gl2">\u5e95\u6ce8</span><span class="gv">'+ANTE+'\u8c46</span></div><div class="gi"><span class="gl2">\u5956\u6c60</span><span class="gv">'+pot+'\u8c46</span></div><div class="gi"><span class="gl2">\u52a0\u6ce8</span><span class="gv">x'+G.mult+'</span></div><div class="gi"><span class="gl2">\u56de\u5408</span><span class="gv">'+G.round+'</span></div>';
-var ti="";if(G.phase==="raise")ti="\ud83c\udccf <span class=\"highlight\">"+esc(G.players[G.dealer].name)+"</span> \u662f\u5e84\u5bb6\uff0c\u662f\u5426\u52a0\u6ce8？";
-else if(G.f3r>0&&G.f3t>=0)ti="\ud83c\udccf <span class=\"highlight\">"+esc(G.players[G.f3t].name)+"</span> \u88ab\u5f3a\u5236\u7ffb\u724c\uff08\u5269 "+G.f3r+" \u5f20\uff09";
-else if(G.phase==="playing"&&G.targetPending)ti="\ud83c\udfaf <span class=\"highlight\">"+esc(G.players[G.targetPending.from].name)+"</span> \u6b63\u5728\u4f7f\u7528 "+cname(G.targetPending.card)+"\uff0c\u9009\u62e9\u76ee\u6807\u2026";else if(G.phase==="playing")ti="\u27a1 \u8f6e\u5230 <span class=\"highlight\">"+esc(G.players[G.cur].name)+(G.cur===mySeat?" (\u4f60)":"")+"</span>";var cdd=cdDesktop();if(cdd&&((G.phase==="raise"&&mySeat===G.dealer)||(G.phase==="playing"&&mySeat===G.cur)))ti+=cdd;$("ti").innerHTML=ti;
-var pa="";G.players.forEach(function(pl,i){var cls="player-box";if(i===G.cur&&G.phase==="playing")cls+=" current";if(pl.status==="stayed")cls+=" stayed";if(pl.status==="busted")cls+=" busted";if(i===mySeat)cls+=" me";
-var nm=esc(pl.name);if(i===hostSeat&&seats[i]&&!seats[i].ai)nm="\ud83d\udc51 "+nm;else if(seats[i]&&seats[i].ai)nm="\ud83e\udd16 "+nm;if(i===G.cur&&G.phase==="playing"&&i===mySeat)nm+=" (\u4f60)";
-pa+='<div class="'+cls+'"><div class="pname">'+nm+'</div><div class="pscore"><b>\u5c40\u9762:'+calcLive(pl)+'</b> | \u7d2f\u8ba1:'+pl.total+' | \ud83e\uded8'+pl.beans+'</div><div class="pcards">';pl.hand.forEach(function(c){pa+=rcard(c)});if(!pl.hand.length&&pl.status==="active")pa+='<span style="color:var(--dim);font-size:10px">\u7a7a</span>';pa+='</div><div class="ptags">';
-pl.bonus.forEach(function(b){pa+='<span class="tg bonus">'+b.v+"</span>"});if(pl.safe)pa+='<span class="tg safe">\u5b89\u5168</span>';if(pl.status==="stayed")pa+='<span class="tg status-stayed">\u5df2\u505c</span>';if(pl.status==="busted")pa+='<span class="tg status-busted">\u7206\u70b8</span>';pa+='</div></div>'});$("pa").innerHTML=pa;
-var aa="";if(G.targetPending&&mySeat===G.targetPending.from){$("tov").style.display="flex";var card=G.targetPending.card;$("tovT").textContent=esc(G.players[G.targetPending.from].name)+" \u4f7f\u7528 "+cname(card)+"\uff0c\u9009\u62e9\u76ee\u6807\uff1a";var tl="";G.targetPending.targets.forEach(function(t){tl+='<button type="button" class="tb" data-idx="'+t.idx+'">'+esc(t.name)+"</button>"});$("tovL").innerHTML=tl;$("tovL").querySelectorAll(".tb").forEach(function(b){b.onclick=function(){send({type:"target",idx:parseInt(b.dataset.idx,10)});$("tov").style.display="none"}})}else{$("tov").style.display="none"}
-if(G.phase==="raise"&&mySeat===G.dealer&&!actionSent){aa='<button class="btn bw" id="aRaise">\u52a0\u6ce8 (x'+G.mult+"\u2192x"+G.mult*2+')</button><button class="btn bo" id="aSkip">\u4e0d\u52a0\u6ce8\uff0c\u5f00\u59cb</button>'}
-else if(G.phase==="playing"&&G.f3r>0)aa='<span style="color:var(--ylw)">\u7ffb\u4e09\u5f20\u6267\u884c\u4e2d…</span>';
-else if(G.phase==="playing"&&mySeat===G.cur&&G.players[G.cur].status==="active"&&!actionSent){aa='<button class="btn bp" id="aHit">\u7ffb\u724c</button><button class="btn bs" id="aStay">\u505c\u724c</button>'}
-$("aa").innerHTML=aa;var rh=$("aRaise");if(rh)rh.onclick=function(){if(actionSent)return;actionSent=true;this.disabled=true;send({type:"raise"})};var sk=$("aSkip");if(sk)sk.onclick=function(){if(actionSent)return;actionSent=true;this.disabled=true;send({type:"skip"})};var hi=$("aHit");if(hi)hi.onclick=function(){if(actionSent)return;actionSent=true;this.disabled=true;send({type:"hit"})};var st=$("aStay");if(st)st.onclick=function(){if(actionSent)return;actionSent=true;this.disabled=true;send({type:"stay"})};
-var lg="";(G.log||[]).forEach(function(l){lg+='<div class="le '+(l.cls||"")+'">'+esc(l.t)+"</div>"});var gl=$("glog");gl.innerHTML=lg;gl.scrollTop=gl.scrollHeight}
-function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
-function renderRoundEnd(){if(!G)return;var f7=G.f7winner;var h="<thead><tr><th>\u73a9\u5bb6</th><th>\u72b6\u6001</th><th>\u672c\u56de\u5408</th><th>\u7d2f\u8ba1</th></tr></thead><tbody>";
-var sorted=G.players.slice().sort(function(a,b){return b.rscore-a.rscore});sorted.forEach(function(p){var idx=G.players.indexOf(p);var cls="",st="\u505c\u724c";if(p.status==="busted"){cls="br";st="\u7206\u70b8"}if(idx===f7){cls="fr";st="Flip7!"}h+='<tr class="'+cls+'"><td>'+esc(p.name)+'</td><td>'+st+'</td><td>+'+p.rscore+'</td><td>'+p.total+"</td></tr>"});h+="</tbody>";$("rrt").innerHTML=h;$("ret").textContent="\u7b2c "+G.round+" \u56de\u5408\u7ed3\u675f";$("hostRound").classList.toggle("show",isHost())}
-function renderGameEnd(){if(!G||!G.finalRanking)return;var w=G.finalRanking[0];$("wn").textContent=esc(w.name)+" \u80dc\u5229!";$("ws").textContent="\u603b\u5206 "+w.total+" \u5206";var h="<thead><tr><th>#</th><th>\u73a9\u5bb6</th><th>\u603b\u5206</th><th>\u8c46\u5b50</th></tr></thead><tbody>";
-G.finalRanking.forEach(function(p,i){var cls=i===0?"wr":"",ct=p._bc>=0?"+"+p._bc:""+p._bc,cc=p._bc>=0?"pos":"neg";h+='<tr class="'+cls+'"><td>'+(i+1)+'</td><td>'+esc(p.name)+'</td><td>'+p.total+'</td><td><span class="bc '+cc+'">'+ct+'</span> (\u5269 '+p.beans+")</td></tr>"});h+="</tbody>";$("frt").innerHTML=h;$("hostEnd").classList.toggle("show",isHost())}
-function onState(msg){actionSent=false;G=msg.G;seats=msg.seats||[];roomSize=msg.roomSize||4;hostSeat=msg.hostSeat!=null?msg.hostSeat:0;if(mySeat>=0&&(mySeat>=seats.length||!seats[mySeat]||seats[mySeat].ai))mySeat=-1;selRoom=roomSize;$("roomMax").textContent=roomSize;buildRs();
-var waiting=mySeat<0&&G.phase!=="lobby";
-if(waiting){showScr("lobby");renderLobby();$("joinBlock").style.display="none";$("waitMsg").style.display="block"}else if(G.phase==="lobby"){showScr("lobby");$("waitMsg").style.display="none";renderLobby()}else if(G.phase==="roundEnd"){showScr("roundEnd");renderRoundEnd();renderGame()}else if(G.phase==="gameEnd"){showScr("gameEnd");renderGameEnd()}else{showScr("game");renderGame()}if(!waiting)renderLobby()}
-function cdDesktop(){if(!G||!G.deadline)return"";var s=Math.max(0,Math.ceil((G.deadline-Date.now())/1000));return s>0?' <span class="countdown">'+s+"s</span>":""}
-function renderScoreboard(){if(!G||!G.players)return;var sb="";var sorted=G.players.slice().sort(function(a,b){return b.total-a.total||calcLive(b)-calcLive(a)});
-sorted.forEach(function(p,i){var live=calcLive(p);sb+='<div class="sb-row"><span class="sb-name">'+(i+1)+". "+esc(p.name)+'</span><span class="sb-score">'+live+'</span><span class="sb-total">(累'+p.total+')</span></div>'});
-$("sbBody").innerHTML=sb}
-function renderFloat(){var f=$("floatAA");var isMobile=window.innerWidth<=480;
-if(!isMobile||!G||G.phase==="roundEnd"||G.phase==="gameEnd"||G.phase==="lobby"||actionSent||G.targetPending){f.style.display="none";return}
-var dl=G.deadline?Math.max(0,Math.ceil((G.deadline-Date.now())/1000)):0;var cdHtml=dl>0?'<span class="countdown">'+dl+"s</span>":"";var btns="";
-if(G.phase==="raise"&&mySeat===G.dealer){btns='<button class="btn bw" id="fRaise">加注 x'+(G.mult*2)+'</button><button class="btn bo" id="fSkip">不加注</button>'}
-else if(G.phase==="playing"&&mySeat===G.cur&&G.players[G.cur].status==="active"&&G.f3r<=0&&!G.targetPending){var cs=G.players[G.cur].hand.length>0;btns='<button class="btn bp" id="fHit">翻牌</button><button class="btn bs" id="fStay">停牌</button>'}
-if(btns){f.innerHTML=cdHtml+btns;f.style.display="flex";var fr=$("fRaise");if(fr)fr.ontouchend=fr.onclick=function(e){e.preventDefault();if(actionSent)return;actionSent=true;$("floatAA").style.display="none";send({type:"raise"})};var fk=$("fSkip");if(fk)fk.ontouchend=fk.onclick=function(e){e.preventDefault();if(actionSent)return;actionSent=true;$("floatAA").style.display="none";send({type:"skip"})};var fh=$("fHit");if(fh)fh.ontouchend=fh.onclick=function(e){e.preventDefault();if(actionSent)return;actionSent=true;$("floatAA").style.display="none";send({type:"hit"})};var fs2=$("fStay");if(fs2)fs2.ontouchend=fs2.onclick=function(e){e.preventDefault();if(actionSent)return;actionSent=true;$("floatAA").style.display="none";send({type:"stay"})}}else{f.style.display="none"}}
-setInterval(function(){if(G&&G.deadline){var myAction=(G.phase==="raise"&&mySeat===G.dealer)||(G.phase==="playing"&&mySeat===G.cur);renderFloat();if(myAction){var ti2=$("ti");if(ti2){var old=ti2.querySelector(".countdown");var s=Math.max(0,Math.ceil((G.deadline-Date.now())/1000));if(old){old.textContent=s>0?s+"s":""}}}}},1000);
-function connect(){var proto=location.protocol==="https:"?"wss:":"ws:";ws=new WebSocket(proto+"//"+location.host);$("connSt").textContent="\u8fde\u63a5\u4e2d…";ws.onopen=function(){$("connSt").textContent="\u5df2\u8fde\u63a5";var sn=localStorage.getItem("flip7name");if(sn)send({type:"rejoin",name:sn})};ws.onclose=function(){$("connSt").textContent="\u5df2\u65ad\u5f00\uff0c3\u79d2\u540e\u91cd\u8fde…";setTimeout(connect,3000)};ws.onmessage=function(ev){var msg;try{msg=JSON.parse(ev.data)}catch(e){return}if(msg.type==="state")onState(msg);else if(msg.type==="seated")mySeat=msg.seat;else if(msg.type==="kicked"){localStorage.removeItem("flip7name");mySeat=-1;toast("你已被房主踢出房间")}else if(msg.type==="info")toast(msg.text)}}
-$("btnJoin").onclick=function(){var n=$("nameIn").value.trim();if(!n){toast("\u8bf7\u8f93\u5165\u6635\u79f0");return}send({type:"join",name:n});localStorage.setItem("flip7name",n)};
-$("btnStart").onclick=function(){send({type:"start"})};$("btnNext").onclick=function(){send({type:"nextRound"})};$("btnRestart").onclick=function(){send({type:"restart"})};$("btnLobby").onclick=function(){send({type:"backToLobby"})};$("btnRestartG").onclick=function(){send({type:"restart"})};$("btnLobbyG").onclick=function(){send({type:"backToLobby"})};
-connect();})();
+
+function renderLobby(){
+  $('roomMax').textContent=roomSize;selRoom=roomSize;$('seatCnt').textContent=seats.length;
+  var ul=$('seatList');ul.innerHTML='';
+  seats.forEach(function(s,i){
+    var li=document.createElement('li');if(i===mySeat)li.classList.add('me');
+    var pre=(s.ai?'🤖 ':'')+(i===hostSeat?'👑 ':'');li.textContent=pre+s.name;
+    if(isHost()&&i!==hostSeat&&!s.ai){var kb=document.createElement('button');kb.textContent='✕';kb.style.cssText='float:right;background:none;border:1px solid var(--red);color:var(--red);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:11px';kb.dataset.idx=i;kb.onclick=function(){send({type:'kick',seat:parseInt(this.dataset.idx,10)})};li.appendChild(kb)}
+    ul.appendChild(li);
+  });
+  var joined=mySeat>=0;
+  $('joinBlock').style.display=joined?'none':'block';
+  var hh=isHost()&&G&&G.phase==='lobby';
+  $('hostLobby').classList.toggle('show',!!hh);
+  $('btnStart').disabled=!joined||seats.length<1;
+  buildRs();updateModeUI();
+}
+
+function renderGame(){
+  if(!G)return;
+  var ghb=$('gameHostBtns');if(ghb)ghb.classList.toggle('show',isHost());
+  var isBerserk=G.gameMode==='berserk';
+  var pot=G.players.length*ANTE*G.mult;
+  $('gh').innerHTML='<div class="gi"><span class="gl2">模式</span><span class="gv">'+(isBerserk?'⚔️狂暴':'🃏经典')+'</span></div>'+
+    '<div class="gi"><span class="gl2">牌堆</span><span class="gv">'+G.deck.length+'张</span></div>'+
+    '<div class="gi"><span class="gl2">底注</span><span class="gv">'+ANTE+'豆</span></div>'+
+    '<div class="gi"><span class="gl2">奖池</span><span class="gv">'+pot+'豆</span></div>'+
+    '<div class="gi"><span class="gl2">倍数</span><span class="gv">x'+G.mult+'</span></div>'+
+    '<div class="gi"><span class="gl2">回合</span><span class="gv">'+G.round+'</span></div>';
+
+  // Turn info
+  var ti='';
+  if(G.phase==='raiseChoice'&&G.raiseChoice){
+    var rp=G.players[G.raiseChoice.playerIdx];
+    ti='⚡ <span class="highlight">'+esc(rp.name)+'</span> 正在决定是否加注…';
+  } else if(G.f3r>0&&G.f3t>=0){
+    ti='🎯 <span class="highlight">'+esc(G.players[G.f3t].name)+'</span> 被强制翻牌（剩 '+G.f3r+' 张）';
+  } else if(G.phase==='playing'&&G.targetPending){
+    ti='🎯 <span class="highlight">'+esc(G.players[G.targetPending.from].name)+'</span> 正在使用 '+cname(G.targetPending.card)+'，选择目标…';
+  } else if(G.phase==='playing'){
+    ti='➡ 轮到 <span class="highlight">'+esc(G.players[G.cur].name)+(G.cur===mySeat?' (你)':'')+'</span>';
+    var cdd=cdDesktop();if(cdd&&((G.phase==='playing'&&mySeat===G.cur)))ti+=cdd;
+  }
+  $('ti').innerHTML=ti;
+
+  // Players area
+  var pa='';
+  G.players.forEach(function(pl,i){
+    var cls='player-box';
+    if(i===G.cur&&G.phase==='playing')cls+=' current';
+    if(pl.status==='stayed')cls+=' stayed';
+    if(pl.status==='busted')cls+=' busted';
+    if(i===mySeat)cls+=' me';
+    var nm=esc(pl.name);
+    if(i===hostSeat&&seats[i]&&!seats[i].ai)nm='👑 '+nm;
+    else if(seats[i]&&seats[i].ai)nm='🤖 '+nm;
+    if(i===G.cur&&G.phase==='playing'&&i===mySeat)nm+=' (你)';
+    pa+='<div class="'+cls+'"><div class="pname">'+nm+'</div>';
+    pa+='<div class="pscore"><b>局面:'+calcLive(pl)+'</b> | 累计:'+pl.total+' | 🫘'+pl.beans+'</div>';
+    pa+='<div class="pcards">';
+    pl.hand.forEach(function(c){pa+=rcard(c)});
+    if(!pl.hand.length&&pl.status==='active')pa+='<span style="color:var(--dim);font-size:10px">空</span>';
+    pa+='</div><div class="ptags">';
+    pl.bonus.forEach(function(b){pa+='<span class="tg bonus">'+b.v+'</span>'});
+    if(pl.safe)pa+='<span class="tg safe">安全</span>';
+    if(pl.status==='stayed')pa+='<span class="tg status-stayed">已停</span>';
+    if(pl.status==='busted')pa+='<span class="tg status-busted">爆炸</span>';
+    pa+='</div></div>';
+  });
+  $('pa').innerHTML=pa;
+
+  // Target selection overlay
+  if(G.targetPending&&mySeat===G.targetPending.from){
+    $('tov').style.display='flex';
+    var card=G.targetPending.card;
+    $('tovT').textContent=esc(G.players[G.targetPending.from].name)+' 使用 '+cname(card)+'，选择目标：';
+    var tl='';G.targetPending.targets.forEach(function(t){tl+='<button type="button" class="tb" data-idx="'+t.idx+'">'+esc(t.name)+'</button>'});
+    $('tovL').innerHTML=tl;
+    $('tovL').querySelectorAll('.tb').forEach(function(b){b.onclick=function(){send({type:'target',idx:parseInt(b.dataset.idx,10)});$('tov').style.display='none'}});
+  }else{$('tov').style.display='none'}
+
+  // Raise choice overlay
+  if(G.raiseChoice&&G.phase==='raiseChoice'){
+    $('rcov').style.display='flex';
+    var rc=G.raiseChoice,rpi=rc.playerIdx;
+    var rpl=G.players[rpi];
+    var isMe=mySeat===rpi;
+    if(isMe){
+      var reason=rc.reason==='safety_saved'?'🛡️ 安全牌救了你！可选择加注':rc.reason==='x2card'?'🎯 翻到×2加分牌！可选择加注':'⚡ 可选择加注';
+      $('rcT').textContent=reason;
+      $('rcSub').textContent='两个倍率可叠加选择，选后按钮消失，确认/跳过结束';
+      var btns='';
+      if(rc.x2)btns+='<button class="rb rb-x2" id="rcX2">×2 加注</button>';
+      if(rc.x4)btns+='<button class="rb rb-x4" id="rcX4">×4 加注</button>';
+      $('rcBtns').innerHTML=btns;
+      $('rcSkip').style.display='';
+      var rx2=$('rcX2');if(rx2)rx2.onclick=function(){send({type:'raiseOpt',opt:'x2'})};
+      var rx4=$('rcX4');if(rx4)rx4.onclick=function(){send({type:'raiseOpt',opt:'x4'})};
+      $('rcSkip').onclick=function(){send({type:'skipRaise'})};
+      var dl=G.deadline?Math.max(0,Math.ceil((G.deadline-Date.now())/1000)):0;
+      if(dl>0){var cds=document.createElement('span');cds.className='countdown';cds.textContent=dl+'s';var rcT=$('rcT');if(!rcT.querySelector('.countdown'))rcT.appendChild(cds)}
+    }else{
+      $('rcT').textContent='⏳ '+esc(rpl.name)+' 正在决定是否加注…';
+      $('rcSub').textContent='';$('rcBtns').innerHTML='';$('rcSkip').style.display='none';
+    }
+  }else{$('rcov').style.display='none'}
+
+  // Action buttons
+  var aa='';
+  var phase=G.phase;
+  if(phase==='playing'&&G.f3r>0){
+    aa='<span style="color:var(--ylw)">强制翻牌进行中…</span>';
+  }else if(phase==='playing'&&mySeat===G.cur&&G.players[G.cur].status==='active'&&!actionSent&&!G.targetPending){
+    if(isBerserk){
+      aa='<button class="btn bp" id="aHit">翻牌</button>';
+    }else{
+      aa='<button class="btn bp" id="aHit">翻牌</button><button class="btn bs" id="aStay">停牌</button>';
+    }
+  }
+  $('aa').innerHTML=aa;
+  var hi=$('aHit');if(hi)hi.onclick=function(){if(actionSent)return;actionSent=true;this.disabled=true;send({type:'hit'})};
+  var st=$('aStay');if(st)st.onclick=function(){if(actionSent)return;actionSent=true;this.disabled=true;send({type:'stay'})};
+
+  // Log
+  var lg='';(G.log||[]).forEach(function(l){lg+='<div class="le '+(l.cls||'')+'">'+esc(l.t)+'</div>'});
+  var gl=$('glog');gl.innerHTML=lg;gl.scrollTop=gl.scrollHeight;
+
+  renderScoreboard();renderFloat();
+}
+
+function renderRoundEnd(){
+  if(!G)return;
+  var f7=G.f7winner,h='<thead><tr><th>玩家</th><th>状态</th><th>本回合</th><th>累计</th></tr></thead><tbody>';
+  var sorted=G.players.slice().sort(function(a,b){return b.rscore-a.rscore});
+  sorted.forEach(function(p){
+    var idx=G.players.indexOf(p),cls='',st='停牌';
+    if(p.status==='busted'){cls='br';st='爆炸'}
+    if(idx===f7){cls='fr';st='Flip7!'}
+    h+='<tr class="'+cls+'"><td>'+esc(p.name)+'</td><td>'+st+'</td><td>+'+p.rscore+'</td><td>'+p.total+'</td></tr>';
+  });
+  h+='</tbody>';$('rrt').innerHTML=h;$('ret').textContent='第 '+G.round+' 回合结束';
+  $('hostRound').classList.toggle('show',isHost());
+}
+
+function renderGameEnd(){
+  if(!G||!G.finalRanking)return;
+  var w=G.finalRanking[0];
+  $('wn').textContent=esc(w.name)+' 胜利!';
+  $('ws').textContent='总分 '+w.total+' 分 | 底注×'+G.mult+' 倍 | 系统抽成 '+(G.players.length*ANTE*G.mult*0.03|0)+'豆';
+  var h='<thead><tr><th>#</th><th>玩家</th><th>总分</th><th>豆子变化</th></tr></thead><tbody>';
+  G.finalRanking.forEach(function(p,i){
+    var cls=i===0?'wr':'',ct=p._bc>=0?'+'+p._bc:''+p._bc,cc=p._bc>=0?'pos':'neg';
+    h+='<tr class="'+cls+'"><td>'+(i+1)+'</td><td>'+esc(p.name)+'</td><td>'+p.total+'</td><td><span class="bc '+cc+'">'+ct+'</span> (剩 '+p.beans+')</td></tr>';
+  });
+  h+='</tbody>';$('frt').innerHTML=h;$('hostEnd').classList.toggle('show',isHost());
+}
+
+function onState(msg){
+  actionSent=false;G=msg.G;seats=msg.seats||[];roomSize=msg.roomSize||4;hostSeat=msg.hostSeat!=null?msg.hostSeat:0;
+  if(mySeat>=0&&(mySeat>=seats.length||!seats[mySeat]||seats[mySeat].ai))mySeat=-1;
+  selRoom=roomSize;$('roomMax').textContent=roomSize;buildRs();
+  var waiting=mySeat<0&&G.phase!=='lobby';
+  if(waiting){showScr('lobby');renderLobby();$('joinBlock').style.display='none';$('waitMsg').style.display='block'}
+  else if(G.phase==='lobby'){showScr('lobby');$('waitMsg').style.display='none';renderLobby()}
+  else if(G.phase==='roundEnd'){showScr('roundEnd');renderRoundEnd();renderGame()}
+  else if(G.phase==='gameEnd'){showScr('gameEnd');renderGameEnd()}
+  else{showScr('game');renderGame()}
+  if(!waiting)renderLobby();
+}
+
+function cdDesktop(){if(!G||!G.deadline)return'';var s=Math.max(0,Math.ceil((G.deadline-Date.now())/1000));return s>0?' <span class="countdown">'+s+'s</span>':''}
+
+function renderScoreboard(){
+  if(!G||!G.players)return;
+  var sb='',sorted=G.players.slice().sort(function(a,b){return b.total-a.total||calcLive(b)-calcLive(a)});
+  sorted.forEach(function(p,i){var live=calcLive(p);sb+='<div class="sb-row"><span class="sb-name">'+(i+1)+'. '+esc(p.name)+'</span><span class="sb-score">'+live+'</span><span class="sb-total">(累'+p.total+')</span></div>'});
+  $('sbBody').innerHTML=sb;
+}
+
+function renderFloat(){
+  var f=$('floatAA');var isMobile=window.innerWidth<=480;
+  if(!isMobile||!G||G.phase==='roundEnd'||G.phase==='gameEnd'||G.phase==='lobby'||actionSent||G.targetPending||G.raiseChoice){f.style.display='none';return}
+  var dl=G.deadline?Math.max(0,Math.ceil((G.deadline-Date.now())/1000)):0;
+  var cdHtml=dl>0?'<span class="countdown">'+dl+'s</span>':'';
+  var btns='',isBerserk=G&&G.gameMode==='berserk';
+  if(G.phase==='playing'&&mySeat===G.cur&&G.players[G.cur].status==='active'&&G.f3r<=0&&!G.targetPending){
+    btns='<button class="btn bp" id="fHit">翻牌</button>';
+    if(!isBerserk)btns+='<button class="btn bs" id="fStay">停牌</button>';
+  }
+  if(btns){
+    f.innerHTML=cdHtml+btns;f.style.display='flex';
+    var fh=$('fHit');if(fh)fh.ontouchend=fh.onclick=function(e){e.preventDefault();if(actionSent)return;actionSent=true;$('floatAA').style.display='none';send({type:'hit'})};
+    var fs=$('fStay');if(fs)fs.ontouchend=fs.onclick=function(e){e.preventDefault();if(actionSent)return;actionSent=true;$('floatAA').style.display='none';send({type:'stay'})};
+  }else{f.style.display='none'}
+}
+
+setInterval(function(){
+  if(G&&G.deadline){
+    var myAction=G.phase==='playing'&&mySeat===G.cur;
+    renderFloat();
+    if(myAction){var ti2=$('ti');if(ti2){var old=ti2.querySelector('.countdown');var s=Math.max(0,Math.ceil((G.deadline-Date.now())/1000));if(old){old.textContent=s>0?s+'s':''}}}
+    if(G.phase==='raiseChoice'&&G.raiseChoice&&mySeat===G.raiseChoice.playerIdx){
+      var rcT=$('rcT');if(rcT){var old2=rcT.querySelector('.countdown');var s2=Math.max(0,Math.ceil((G.deadline-Date.now())/1000));if(old2){old2.textContent=s2>0?s2+'s':''}}}
+  }
+},1000);
+
+function connect(){
+  var proto=location.protocol==='https:'?'wss:':'ws:';
+  ws=new WebSocket(proto+'//'+location.host);
+  $('connSt').textContent='连接中…';
+  ws.onopen=function(){$('connSt').textContent='已连接';var sn=localStorage.getItem('flip7name');if(sn)send({type:'rejoin',name:sn})};
+  ws.onclose=function(){$('connSt').textContent='已断开，3秒后重连…';setTimeout(connect,3000)};
+  ws.onmessage=function(ev){var msg;try{msg=JSON.parse(ev.data)}catch(e){return}
+    if(msg.type==='state')onState(msg);
+    else if(msg.type==='seated')mySeat=msg.seat;
+    else if(msg.type==='kicked'){localStorage.removeItem('flip7name');mySeat=-1;toast('你已被房主踢出房间')}
+    else if(msg.type==='info')toast(msg.text)};
+}
+$('btnJoin').onclick=function(){var n=$('nameIn').value.trim();if(!n){toast('请输入昵称');return}send({type:'join',name:n});localStorage.setItem('flip7name',n)};
+$('btnStart').onclick=function(){send({type:'start'})};
+$('btnNext').onclick=function(){send({type:'nextRound'})};
+$('btnRestart').onclick=function(){send({type:'restart'})};
+$('btnLobby').onclick=function(){send({type:'backToLobby'})};
+$('btnRestartG').onclick=function(){send({type:'restart'})};
+$('btnLobbyG').onclick=function(){send({type:'backToLobby'})};
+connect();
+})();
 </script></body></html>
