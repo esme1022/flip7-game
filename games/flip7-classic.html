@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Flip7 经典</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;user-select:none;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%;overflow:hidden;background:#050208;font-family:'Noto Sans SC',system-ui,sans-serif}
+body{display:flex;align-items:center;justify-content:center}
+
+#scaleWrap{width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden}
+#game{
+  width:960px;height:540px;position:relative;overflow:hidden;
+  background:linear-gradient(145deg,#0f0818 0%,#1a0e04 30%,#0d0714 60%,#0a0510 100%);
+  border-radius:14px;border:2px solid #2a1a0a;
+  transform-origin:center center;
+}
+
+/* Header */
+.exit-btn{
+  position:absolute;top:6px;left:8px;z-index:30;
+  width:32px;height:32px;border-radius:50%;border:none;cursor:pointer;
+  background:rgba(255,255,255,.55);color:#4a2070;font-size:18px;font-weight:900;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .15s;backdrop-filter:blur(4px);
+}
+.exit-btn:hover{background:rgba(255,255,255,.85)}
+.header{
+  position:absolute;top:0;left:0;right:180px;height:36px;
+  display:flex;align-items:center;padding:0 12px 0 44px;gap:10px;z-index:20;
+}
+.table-surface{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:560px;height:340px;border-radius:50%;
+  background:radial-gradient(ellipse at 50% 40%,#b088d0 0%,#8a60b0 40%,#6a3f90 80%,#5a2f80 100%);
+  box-shadow:0 8px 32px rgba(60,20,100,.4),inset 0 4px 20px rgba(255,255,255,.08);
+  border:5px solid rgba(180,140,220,.5);
+  z-index:1;margin-right:90px;
+}
+.game-title{font-size:14px;font-weight:900;color:#4a2070}
+.round-info{font-size:11px;color:#7a5090;font-weight:700;margin-left:auto}
+.mode-badge{
+  font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;
+  background:rgba(124,77,255,.25);color:#651fff;
+}
+
+/* Game log */
+.log-panel{
+  position:absolute;top:0;right:0;width:180px;height:100%;
+  background:rgba(255,255,255,.35);border-left:1.5px solid rgba(255,255,255,.6);
+  display:flex;flex-direction:column;z-index:15;
+}
+.log-title{
+  padding:8px 10px;font-size:11px;font-weight:900;color:#4a2070;
+  border-bottom:1px solid rgba(255,255,255,.5);flex-shrink:0;
+}
+.log-body{
+  flex:1;overflow-y:auto;padding:6px 8px;
+  display:flex;flex-direction:column;gap:4px;
+}
+.log-entry{
+  font-size:10px;line-height:1.35;color:#5a3070;
+  padding:3px 6px;border-radius:6px;background:rgba(255,255,255,.4);
+  animation:logIn .3s ease;
+}
+.log-entry.highlight{background:rgba(124,77,255,.2);color:#4a2070;font-weight:700}
+@keyframes logIn{from{opacity:0;transform:translateX(8px)}to{opacity:1;transform:none}}
+
+/* Player areas */
+.player-area{
+  position:absolute;display:flex;flex-direction:column;align-items:center;gap:3px;
+  transition:filter .2s;z-index:5;
+}
+.player-area.active-player{filter:drop-shadow(0 0 8px rgba(124,77,255,.6))}
+.player-area.top{top:36px;left:50%;transform:translateX(-50%)}
+.player-area.right{top:50%;right:185px;transform:translateY(-50%)}
+.player-area.bottom{bottom:20px;left:50%;transform:translateX(-50%)}
+.player-area.left{top:50%;left:16px;transform:translateY(-50%)}
+
+.player-header{display:flex;align-items:center;gap:5px}
+.player-avatar{
+  width:32px;height:32px;border-radius:50%;font-size:18px;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,.55);border:2px solid rgba(160,108,213,.5);
+}
+.player-name{font-size:11px;font-weight:700;color:#4a2070;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.player-total{font-size:10px;color:#8a60b0;font-weight:700}
+.player-status{
+  font-size:9px;font-weight:700;padding:1px 7px;border-radius:8px;
+  background:rgba(255,255,255,.5);color:#7a5090;
+}
+.player-status.stopped{background:rgba(100,180,100,.3);color:#2d6b2d}
+.player-status.busted{background:rgba(220,80,80,.3);color:#a02020}
+.player-status.active-s{background:rgba(124,77,255,.25);color:#651fff}
+
+.player-cards{
+  display:flex;gap:3px;flex-wrap:wrap;justify-content:center;
+  max-width:220px;min-height:36px;
+}
+.player-cards.vertical{flex-direction:column;max-width:50px;max-height:160px}
+
+/* Cards */
+.card{
+  width:28px;height:38px;border-radius:5px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:900;position:relative;
+  box-shadow:0 2px 4px rgba(0,0,0,.15);
+  transition:transform .15s;
+}
+.card.number{background:linear-gradient(135deg,#fff,#f0e6ff);color:#4a2070;border:1.5px solid #c9a8df}
+.card.face-down{background:linear-gradient(135deg,#7c4dff,#651fff);color:transparent;border:1.5px solid #5e35b1}
+.card.face-down::after{content:'?';color:rgba(255,255,255,.7);font-size:14px;position:absolute}
+.card.bonus{background:linear-gradient(135deg,#ffd54f,#ffb300);color:#5d4037;border:1.5px solid #ff8f00;font-size:10px}
+.card.multiplier{background:linear-gradient(135deg,#ff7043,#e64a19);color:#fff;border:1.5px solid #bf360c;font-size:10px}
+.card.safety{background:linear-gradient(135deg,#4fc3f7,#0288d1);color:#fff;border:1.5px solid #01579b;font-size:9px}
+.card.action{background:linear-gradient(135deg,#ab47bc,#7b1fa2);color:#fff;border:1.5px solid #6a1b9a;font-size:9px}
+.card.draw-anim{animation:cardDraw .4s ease}
+@keyframes cardDraw{0%{transform:scale(.3) rotate(-20deg);opacity:0}100%{transform:none;opacity:1}}
+
+.round-score{
+  font-size:10px;font-weight:700;color:#651fff;
+  background:rgba(255,255,255,.45);padding:1px 8px;border-radius:8px;
+}
+
+/* Center area */
+.center-area{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  margin-right:90px;z-index:5;
+}
+.deck-area{display:flex;align-items:center;gap:16px}
+.deck-stack{
+  width:52px;height:72px;border-radius:8px;cursor:pointer;
+  background:linear-gradient(135deg,#7c4dff,#651fff);
+  border:2px solid #5e35b1;position:relative;
+  box-shadow:0 4px 12px rgba(101,31,255,.35);
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .15s,box-shadow .15s;
+}
+.deck-stack::before,.deck-stack::after{
+  content:'';position:absolute;width:52px;height:72px;border-radius:8px;
+  background:linear-gradient(135deg,#8e6bff,#7244ff);border:2px solid #5e35b1;
+}
+.deck-stack::before{transform:translate(-3px,-3px);z-index:-1}
+.deck-stack::after{transform:translate(-6px,-6px);z-index:-2}
+.deck-stack.can-flip:hover{transform:translateY(-4px);box-shadow:0 8px 20px rgba(101,31,255,.5)}
+.deck-stack.can-flip:active{transform:scale(.95)}
+.deck-label{font-size:11px;font-weight:900;color:#fff;z-index:1;text-shadow:0 1px 3px rgba(0,0,0,.3)}
+.deck-count{font-size:10px;color:#7a5090;font-weight:700}
+.discard-pile{
+  width:44px;height:62px;border-radius:7px;
+  background:rgba(255,255,255,.3);border:1.5px dashed rgba(160,108,213,.4);
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;color:#8a60b0;font-weight:700;
+}
+
+.action-buttons{display:flex;gap:10px;margin-top:4px}
+.btn{
+  padding:8px 22px;border-radius:20px;border:none;cursor:pointer;
+  font-size:14px;font-weight:900;font-family:inherit;
+  transition:transform .15s,box-shadow .15s;
+  box-shadow:0 3px 10px rgba(0,0,0,.15);
+}
+.btn:hover{transform:translateY(-2px);box-shadow:0 5px 14px rgba(0,0,0,.2)}
+.btn:active{transform:scale(.96)}
+.btn:disabled{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-flip{background:linear-gradient(135deg,#7c4dff,#651fff);color:#fff}
+.btn-stop{background:linear-gradient(135deg,#66bb6a,#43a047);color:#fff}
+
+/* Target selection overlay */
+.overlay{
+  position:absolute;inset:0;background:rgba(30,10,50,.55);
+  display:none;align-items:center;justify-content:center;z-index:50;
+  backdrop-filter:blur(3px);
+}
+.overlay.show{display:flex}
+.target-panel{
+  background:linear-gradient(145deg,#f5e6ff,#e0c8f0);
+  border:2px solid #c9a8df;border-radius:16px;padding:20px 24px;
+  text-align:center;min-width:280px;box-shadow:0 8px 32px rgba(0,0,0,.25);
+}
+.target-title{font-size:16px;font-weight:900;color:#4a2070;margin-bottom:4px}
+.target-sub{font-size:11px;color:#7a5090;margin-bottom:14px}
+.target-list{display:flex;flex-direction:column;gap:8px}
+.target-btn{
+  display:flex;align-items:center;gap:10px;padding:10px 16px;
+  border-radius:12px;border:1.5px solid rgba(160,108,213,.4);
+  background:rgba(255,255,255,.55);cursor:pointer;
+  font-size:13px;font-weight:700;color:#4a2070;
+  transition:background .15s,transform .15s;
+}
+.target-btn:hover{background:rgba(255,255,255,.85);transform:scale(1.02)}
+.target-btn.disabled{opacity:.35;pointer-events:none}
+.target-btn .t-emoji{font-size:22px}
+.target-btn .t-info{text-align:left;flex:1}
+.target-btn .t-name{font-size:13px}
+.target-btn .t-detail{font-size:10px;color:#8a60b0;font-weight:400}
+
+/* Round end banner */
+.banner{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  background:rgba(255,255,255,.92);border:2px solid #c9a8df;
+  border-radius:16px;padding:16px 28px;text-align:center;
+  z-index:40;box-shadow:0 8px 32px rgba(0,0,0,.2);
+  animation:bannerIn .4s ease;display:none;
+}
+.banner.show{display:block}
+@keyframes bannerIn{from{opacity:0;transform:translate(-50%,-50%) scale(.8)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+.banner-title{font-size:20px;font-weight:900;color:#651fff;margin-bottom:6px}
+.banner-text{font-size:12px;color:#5a3070;line-height:1.6}
+
+/* End game overlay */
+.end-overlay{
+  position:absolute;inset:0;background:rgba(30,10,50,.7);
+  display:none;align-items:center;justify-content:center;z-index:60;
+  backdrop-filter:blur(4px);
+}
+.end-overlay.show{display:flex}
+.end-panel{
+  background:linear-gradient(145deg,#f5e6ff,#e0c8f0);
+  border:2px solid #c9a8df;border-radius:20px;padding:24px 32px;
+  text-align:center;min-width:360px;max-width:420px;
+  box-shadow:0 12px 40px rgba(0,0,0,.3);
+  animation:bannerIn .5s ease;
+}
+.end-title{font-size:22px;font-weight:900;color:#651fff;margin-bottom:12px}
+.end-ranking{margin:12px 0;display:flex;flex-direction:column;gap:6px}
+.rank-row{
+  display:flex;align-items:center;gap:8px;padding:6px 12px;
+  border-radius:10px;background:rgba(255,255,255,.5);font-size:13px;
+}
+.rank-row.winner{background:rgba(255,215,0,.25);border:1.5px solid rgba(255,193,7,.5)}
+.rank-pos{font-weight:900;color:#651fff;width:24px}
+.rank-emoji{font-size:20px}
+.rank-name{flex:1;text-align:left;font-weight:700;color:#4a2070}
+.rank-score{font-weight:900;color:#651fff}
+.end-rewards{font-size:12px;color:#5a3070;margin:10px 0;line-height:1.8}
+.end-rewards .reward-positive{color:#2e7d32;font-weight:700}
+.end-rewards .reward-negative{color:#c62828;font-weight:700}
+.btn-lobby{
+  margin-top:14px;padding:10px 32px;border-radius:20px;border:none;cursor:pointer;
+  font-size:15px;font-weight:900;font-family:inherit;color:#fff;
+  background:linear-gradient(135deg,#7c4dff,#651fff);
+  box-shadow:0 4px 14px rgba(101,31,255,.4);
+  transition:transform .15s;
+}
+.btn-lobby:hover{transform:scale(1.04)}
+
+/* Flip7 celebration */
+.flip7-fx{
+  position:absolute;inset:0;pointer-events:none;z-index:45;
+  display:flex;align-items:center;justify-content:center;
+}
+.flip7-text{
+  font-size:48px;font-weight:900;color:#651fff;
+  text-shadow:0 0 20px rgba(124,77,255,.6),0 2px 8px rgba(0,0,0,.2);
+  animation:flip7Pop .8s ease forwards;opacity:0;
+}
+@keyframes flip7Pop{
+  0%{opacity:0;transform:scale(.3) rotate(-10deg)}
+  50%{opacity:1;transform:scale(1.2) rotate(3deg)}
+  100%{opacity:0;transform:scale(1) translateY(-30px)}
+}
+
+/* Thinking indicator */
+.thinking{
+  position:absolute;font-size:10px;color:#651fff;font-weight:700;
+  animation:thinkPulse 1s infinite;
+}
+@keyframes thinkPulse{0%,100%{opacity:.4}50%{opacity:1}}
+
+/* Battle Mode */
+.battle-bar{
+  position:absolute;top:6px;left:50%;transform:translateX(-50%);z-index:25;
+  display:none;align-items:center;gap:14px;
+  background:linear-gradient(135deg,rgba(230,81,0,.12),rgba(255,152,0,.12));
+  border:1.5px solid rgba(230,81,0,.35);
+  border-radius:20px;padding:5px 18px;backdrop-filter:blur(4px);
+  font-size:12px;font-weight:700;
+}
+.battle-bar .hp-val{color:#d32f2f}
+.battle-bar .crystal-val{color:#7b1fa2}
+.battle-bar .consume-val{color:#e65100}
+.battle-bar .raise-count{color:#bf360c;font-size:10px}
+
+/* Action FX */
+.action-toast{
+  position:absolute;top:42%;left:50%;transform:translate(-50%,-50%);
+  background:rgba(60,10,100,.88);color:#fff;
+  border-radius:14px;padding:10px 22px;
+  font-size:15px;font-weight:900;
+  z-index:46;pointer-events:none;
+  white-space:nowrap;
+  animation:actionToastAnim 2s ease forwards;
+  margin-right:90px;
+}
+@keyframes actionToastAnim{
+  0%{opacity:0;transform:translate(-50%,-50%) scale(.7)}
+  18%{opacity:1;transform:translate(-50%,-50%) scale(1.05)}
+  65%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  100%{opacity:0;transform:translate(-50%,-56%) scale(.95)}
+}
+.player-area.action-target{animation:targetFlash .7s ease 2}
+@keyframes targetFlash{
+  0%{filter:drop-shadow(0 0 6px rgba(255,80,80,0))}
+  50%{filter:drop-shadow(0 0 18px rgba(255,80,80,.9))}
+  100%{filter:drop-shadow(0 0 6px rgba(255,80,80,0))}
+}
+</style>
+<link rel="stylesheet" href="cellar-theme.css">
+</head>
+<body>
+<div id="scaleWrap">
+<div id="game">
+  <button class="exit-btn" onclick="location.href='/lobby-design.html'" title="返回酒庄">←</button>
+  <div class="header">
+    <span class="game-title" id="gameTitle">Flip7 经典</span>
+    <span class="mode-badge" id="modeBadge"></span>
+    <span class="round-info" id="roundInfo">第 1 局 · 目标 200 分</span>
+  </div>
+
+  <div class="battle-bar" id="battleBar">
+    <span>❤️ <span class="hp-val" id="hpVal">0</span></span>
+    <span>🔮 <span class="crystal-val" id="crystalVal">0</span></span>
+    <span>本局消耗: <span class="consume-val" id="consumeVal">10</span></span>
+    <span class="raise-count">加注: <span id="raiseVal">0</span>次</span>
+  </div>
+
+  <div class="table-surface"></div>
+
+  <div class="player-area top" id="player1"></div>
+  <div class="player-area right" id="player2"></div>
+  <div class="player-area bottom" id="player0"></div>
+  <div class="player-area left" id="player3"></div>
+
+  <div class="center-area">
+    <div class="deck-area">
+      <div class="deck-stack" id="deckBtn"><span class="deck-label">牌堆</span></div>
+      <div>
+        <div class="deck-count" id="deckCount">94 张</div>
+      </div>
+      <div class="discard-pile" id="discardPile">弃牌</div>
+    </div>
+    <div class="action-buttons" id="actionBtns">
+      <button class="btn btn-flip" id="btnFlip" disabled>翻牌</button>
+      <button class="btn btn-stop" id="btnStop" disabled>停牌</button>
+    </div>
+  </div>
+
+  <div class="log-panel">
+    <div class="log-title">📋 游戏日志</div>
+    <div class="log-body" id="logBody"></div>
+  </div>
+
+  <div class="banner" id="banner">
+    <div class="banner-title" id="bannerTitle"></div>
+    <div class="banner-text" id="bannerText"></div>
+  </div>
+
+  <div class="flip7-fx" id="flip7Fx"></div>
+  <div id="actionFxLayer"></div>
+
+  <div class="overlay" id="targetOverlay">
+    <div class="target-panel">
+      <div class="target-title" id="targetTitle">选择目标</div>
+      <div class="target-sub" id="targetSub"></div>
+      <div class="target-list" id="targetList"></div>
+    </div>
+  </div>
+
+  <div class="end-overlay" id="endOverlay">
+    <div class="end-panel">
+      <div class="end-title" id="endTitle">🎉 游戏结束</div>
+      <div class="end-ranking" id="endRanking"></div>
+      <div class="end-rewards" id="endRewards"></div>
+      <button class="btn-lobby" onclick="returnToLobby()">返回酒庄</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ═══ URL Params ═══ */
+const params = new URLSearchParams(location.search);
+const HUMAN_NAME = params.get('nick') || '玩家';
+const HUMAN_EMOJI = params.get('emoji') || '🐭';
+const GAME_MODE = params.get('mode') || 'fun';
+const GAME_NAME = params.get('game') || 'Flip7 经典';
+const IS_COMPETE = GAME_MODE === 'compete';
+const IS_BATTLE = GAME_MODE === 'battle';
+
+// Battle HP System
+const battleState = {
+  hp: (() => { if (!localStorage.getItem('battle_hp_reset')) { localStorage.setItem('battle_hp','0'); localStorage.setItem('battle_crystals','0'); localStorage.setItem('battle_hp_reset','1'); } return parseInt(localStorage.getItem('battle_hp') || '0'); })(),
+  crystals: parseInt(localStorage.getItem('battle_crystals') || '0'),
+  entryFee: 10,
+  raiseCount: 0,
+  totalConsumed: 0
+};
+
+function initBattle() {
+  if (!IS_BATTLE) return;
+  battleState.totalConsumed = battleState.entryFee;
+  battleState.hp -= battleState.entryFee;
+  saveBattleData();
+  updateBattleUI();
+  document.getElementById('battleBar').style.display = 'flex';
+}
+
+function battleRaise() {
+  if (!IS_BATTLE) return;
+  battleState.raiseCount++;
+  battleState.totalConsumed += battleState.entryFee;
+  battleState.hp -= battleState.entryFee;
+  saveBattleData();
+  updateBattleUI();
+}
+
+function battleSettle(isWinner) {
+  if (!IS_BATTLE) return {};
+  let hpReturn = 0, crystalReward = 0;
+  if (isWinner) {
+    hpReturn = Math.floor(battleState.totalConsumed * 0.9);
+    crystalReward = battleState.totalConsumed;
+    battleState.hp += hpReturn;
+    battleState.crystals += crystalReward;
+  }
+  saveBattleData();
+  return { totalConsumed: battleState.totalConsumed, hpReturn, crystalReward, raiseCount: battleState.raiseCount };
+}
+
+function saveBattleData() {
+  localStorage.setItem('battle_hp', battleState.hp);
+  localStorage.setItem('battle_crystals', battleState.crystals);
+}
+
+function updateBattleUI() {
+  document.getElementById('hpVal').textContent = battleState.hp;
+  document.getElementById('crystalVal').textContent = battleState.crystals;
+  document.getElementById('consumeVal').textContent = battleState.totalConsumed;
+  document.getElementById('raiseVal').textContent = battleState.raiseCount;
+}
+
+const WIN_SCORE = 200;
+
+const BOT_DEFS = [
+  { name: HUMAN_NAME, emoji: HUMAN_EMOJI, isHuman: true },
+  { name: '小狐狸bot', emoji: '🦊', isHuman: false },
+  { name: '布丁熊bot', emoji: '🐻', isHuman: false },
+  { name: '芒果鱼bot', emoji: '🐟', isHuman: false },
+];
+const POS_MAP = ['bottom', 'top', 'right', 'left'];
+const POS_ELS = POS_MAP.map(p => document.getElementById('player' + POS_MAP.indexOf(p)));
+
+document.getElementById('gameTitle').textContent = GAME_NAME;
+document.getElementById('modeBadge').textContent = IS_BATTLE ? '🔥 血拼模式' : IS_COMPETE ? '竞技模式' : '娱乐模式';
+document.getElementById('modeBadge').style.display = (IS_COMPETE || IS_BATTLE) ? '' : 'none';
+
+/* ═══ Scale ═══ */
+function applyScale(){
+  const s = Math.min(window.innerWidth / 960, window.innerHeight / 540);
+  document.getElementById('game').style.transform = 'scale(' + s + ')';
+}
+window.addEventListener('resize', applyScale);
+applyScale();
+initBattle();
+
+/* ═══ Storage ═══ */
+function loadStats(){
+  try{
+    return {
+      stars: Math.max(0, parseInt(localStorage.getItem('flip7_stars')||'3',10)),
+      coins: Math.max(0, parseInt(localStorage.getItem('flip7_coins')||'0',10))
+    };
+  }catch(e){ return { stars:3, coins:0 }; }
+}
+function saveStats(stars, coins){
+  try{
+    localStorage.setItem('flip7_stars', String(stars));
+    localStorage.setItem('flip7_coins', String(coins));
+  }catch(e){}
+}
+
+/* ═══ Utilities ═══ */
+let uidCounter = 0;
+function uid(){ return 'c' + (++uidCounter); }
+function shuffle(arr){
+  for(let i=arr.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+  return arr;
+}
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+function randBetween(a,b){ return a + Math.random()*(b-a); }
+
+/* ═══ Deck ═══ */
+function buildDeck(){
+  const deck = [];
+  for(let n=0;n<=12;n++){
+    const copies = n===0 ? 1 : n;
+    for(let i=0;i<copies;i++) deck.push({type:'number',value:n,id:uid()});
+  }
+  [2,4,6,8,10].forEach(v=>deck.push({type:'bonus',value:v,id:uid()}));
+  deck.push({type:'multiplier',value:2,id:uid()});
+  for(let i=0;i<3;i++){
+    deck.push({type:'freeze',id:uid()});
+    deck.push({type:'flip3',id:uid()});
+    deck.push({type:'safety',id:uid()});
+  }
+  return shuffle(deck);
+}
+
+/* ═══ Player Factory ═══ */
+function makePlayer(idx){
+  const def = BOT_DEFS[idx];
+  return {
+    idx, name:def.name, emoji:def.emoji, isHuman:def.isHuman,
+    numbers:[], bonusAdd:0, multiplier:1, safety:0,
+    status:'active', flip7:false,
+    totalScore:0, roundScore:0,
+  };
+}
+
+/* ═══ Game State ═══ */
+let players, deck, discard, roundNum, currentTurn, gameOver, processing;
+let pendingAction = null;
+
+function resetRoundState(){
+  players.forEach(p=>{
+    p.numbers=[]; p.bonusAdd=0; p.multiplier=1;
+    p.status='active'; p.flip7=false; p.roundScore=0;
+    /* safety carries over? No - reset each round for simplicity, or keep? 
+       Typical Flip7: safety is per-round from drawn cards. Reset. */
+    p.safety=0;
+  });
+  deck = buildDeck();
+  discard = [];
+  currentTurn = 0;
+}
+
+function initGame(){
+  players = [0,1,2,3].map(makePlayer);
+  roundNum = 1;
+  gameOver = false;
+  processing = false;
+  resetRoundState();
+  log('游戏开始！先达到 ' + WIN_SCORE + ' 分获胜', true);
+  render();
+  scheduleTurn();
+}
+
+/* ═══ Scoring ═══ */
+function calcRoundScore(p){
+  if(p.status==='busted') return 0;
+  const sum = p.numbers.reduce((a,c)=>a+c.value,0);
+  let score = sum * p.multiplier + p.bonusAdd;
+  if(p.flip7) score += 15;
+  return score;
+}
+
+function getUniqueCount(p){ return p.numbers.length; }
+
+function hasNumber(p, val){
+  return p.numbers.some(c=>c.value===val);
+}
+
+/* ═══ Logging ═══ */
+function log(msg, highlight){
+  const el = document.createElement('div');
+  el.className = 'log-entry' + (highlight?' highlight':'');
+  el.textContent = msg;
+  const body = document.getElementById('logBody');
+  body.insertBefore(el, body.firstChild);
+  while(body.children.length > 50) body.removeChild(body.lastChild);
+}
+
+/* ═══ Draw Card ═══ */
+function drawCard(){
+  if(deck.length===0){
+    if(discard.length>0){
+      deck = shuffle(discard.splice(0));
+      log('牌堆已空，重新洗牌');
+    } else return null;
+  }
+  return deck.pop();
+}
+
+function cardLabel(c){
+  if(c.type==='number') return String(c.value);
+  if(c.type==='bonus') return '+'+c.value;
+  if(c.type==='multiplier') return '×2';
+  if(c.type==='freeze') return '❄';
+  if(c.type==='flip3') return '3️⃣';
+  if(c.type==='safety') return '🛡';
+  return '?';
+}
+
+/* ═══ Process drawn card ═══ */
+async function processDrawnCard(player, card){
+  discard.push(card);
+  render();
+
+  if(card.type==='number'){
+    if(hasNumber(player, card.value)){
+      if(player.safety>0){
+        player.safety--;
+        log(player.name + ' 抽到重复 ' + card.value + '，护盾抵消！', true);
+        render();
+        return { continueTurn:true };
+      }
+      player.status = 'busted';
+      log(player.name + ' 抽到重复 ' + card.value + '，爆牌！', true);
+      render();
+      return { continueTurn:false, busted:true };
+    }
+    player.numbers.push(card);
+    log(player.name + ' 翻到 ' + card.value);
+
+    if(getUniqueCount(player)>=7){
+      player.flip7 = true;
+      showFlip7Fx();
+      log(player.name + ' 达成 Flip7！+15 分，本局结束！', true);
+      render();
+      await sleep(1200);
+      return { continueTurn:false, flip7:true };
+    }
+    render();
+    return { continueTurn:true };
+  }
+
+  if(card.type==='bonus'){
+    player.bonusAdd += card.value;
+    log(player.name + ' 获得 +' + card.value + ' 加分');
+    render();
+    return { continueTurn:true };
+  }
+
+  if(card.type==='multiplier'){
+    player.multiplier *= 2;
+    log(player.name + ' 获得 ×2 倍率！当前 ×' + player.multiplier);
+    render();
+    return { continueTurn:true };
+  }
+
+  if(card.type==='safety'){
+    player.safety++;
+    log(player.name + ' 获得护盾 🛡');
+    render();
+    return { continueTurn:true };
+  }
+
+  if(card.type==='freeze' || card.type==='flip3'){
+    const action = card.type;
+    log(player.name + ' 抽到' + (action==='freeze'?'冰冻':'翻3') + '行动牌！');
+    render();
+    await sleep(400);
+    const target = await resolveActionTarget(player, action);
+    if(target !== null){
+      const roundEnded = await applyAction(player, target, action);
+      if(roundEnded) return { continueTurn:false, flip7:true };
+    }
+    return { continueTurn:true };
+  }
+
+  return { continueTurn:true };
+}
+
+function showActionToast(msg){
+  const el=document.createElement('div');
+  el.className='action-toast';
+  el.textContent=msg;
+  document.getElementById('actionFxLayer').appendChild(el);
+  setTimeout(()=>el.remove(),2100);
+}
+function flashTarget(player){
+  const el=document.getElementById('player'+player.idx);
+  if(!el)return;
+  el.classList.remove('action-target');
+  void el.offsetWidth;
+  el.classList.add('action-target');
+  setTimeout(()=>el.classList.remove('action-target'),1500);
+}
+
+/* ═══ Action cards ═══ */
+function getValidTargets(source, action){
+  return players.filter(p=>{
+    if(p.idx===source.idx) return false;
+    if(p.status!=='active') return false;
+    return true;
+  });
+}
+
+function resolveActionTarget(source, action){
+  const valid = getValidTargets(source, action);
+  if(valid.length===0){
+    log('没有有效目标，行动牌作废');
+    return null;
+  }
+  if(source.isHuman){
+    return new Promise(resolve=>{
+      pendingAction = { source, action, resolve };
+      showTargetUI(source, action, valid);
+    });
+  }
+  return Promise.resolve(botChooseTarget(source, action, valid));
+}
+
+function showTargetUI(source, action, valid){
+  const overlay = document.getElementById('targetOverlay');
+  const title = action==='freeze' ? '❄ 冰冻 - 选择目标' : '3️⃣ 翻3 - 选择目标';
+  const sub = action==='freeze' ? '强制目标玩家停牌（保留分数）' : '强制目标玩家连翻3张牌';
+  document.getElementById('targetTitle').textContent = title;
+  document.getElementById('targetSub').textContent = sub;
+  const list = document.getElementById('targetList');
+  list.innerHTML = '';
+  valid.forEach(p=>{
+    const btn = document.createElement('div');
+    btn.className = 'target-btn';
+    btn.innerHTML = '<span class="t-emoji">'+p.emoji+'</span><div class="t-info"><div class="t-name">'+p.name+'</div><div class="t-detail">'+getUniqueCount(p)+'张牌 · 预估'+calcRoundScore(p)+'分</div></div>';
+    btn.onclick = ()=>{
+      overlay.classList.remove('show');
+      if(pendingAction){ pendingAction.resolve(p); pendingAction=null; }
+    };
+    list.appendChild(btn);
+  });
+  overlay.classList.add('show');
+}
+
+async function applyAction(source, target, action){
+  if(action==='freeze'){
+    showActionToast('❄ ' + source.name + ' 冻结了 ' + target.name + '！');
+    flashTarget(target);
+    await sleep(300);
+    target.status = 'stopped';
+    log(source.name + ' 冰冻了 ' + target.name + '，强制停牌');
+    render();
+    return false;
+  }
+  if(action==='flip3'){
+    showActionToast('3️⃣ ' + source.name + ' 对 ' + target.name + ' 使用翻3！');
+    flashTarget(target);
+    log(source.name + ' 对 ' + target.name + ' 使用翻3！');
+    render();
+    for(let i=0;i<3;i++){
+      if(target.status!=='active') break;
+      await sleep(500);
+      const card = drawCard();
+      if(!card){ log('牌堆已空'); break; }
+      const result = await processDrawnCard(target, card);
+      if(result.flip7) return true;
+      if(result.busted || !result.continueTurn) break;
+    }
+    render();
+  }
+  return false;
+}
+
+/* ═══ Bot AI ═══ */
+function botChooseTarget(source, action, valid){
+  const sorted = [...valid].sort((a,b)=>calcRoundScore(b)-calcRoundScore(a));
+  const leader = sorted[0];
+  const human = valid.find(p=>p.isHuman);
+
+  if(action==='freeze'){
+    /* Freeze the player closest to Flip7 who is a threat, or human if they're winning */
+    const flip7Threat = valid.filter(p=>getUniqueCount(p)>=5).sort((a,b)=>getUniqueCount(b)-getUniqueCount(a));
+    if(flip7Threat.length>0) return flip7Threat[0];
+    if(human && calcRoundScore(human) >= calcRoundScore(source)) return human;
+    return leader;
+  }
+
+  /* flip3: target leader or human with many cards */
+  if(human && getUniqueCount(human)>=4) return human;
+  const highCards = valid.filter(p=>getUniqueCount(p)>=3).sort((a,b)=>calcRoundScore(b)-calcRoundScore(a));
+  if(highCards.length>0) return highCards[0];
+  return leader;
+}
+
+function estimateBustRisk(p){
+  if(p.numbers.length===0) return 0;
+  const held = new Set(p.numbers.map(c=>c.value));
+  let remaining = 0;
+  deck.forEach(c=>{ if(c.type==='number' && held.has(c.value)) remaining++; });
+  const total = deck.length || 1;
+  return remaining / total;
+}
+
+function botShouldStop(p){
+  const score = calcRoundScore(p);
+  const cards = getUniqueCount(p);
+  const risk = estimateBustRisk(p);
+  const maxOpponent = Math.max(...players.filter(x=>x.idx!==p.idx).map(x=>x.totalScore));
+  const myTotal = p.totalScore;
+  const behind = myTotal < maxOpponent;
+  const ahead = myTotal > maxOpponent + 30;
+
+  /* Always stop at 7 (Flip7 handled separately) */
+  if(cards>=6) return risk > 0.08;
+
+  /* Strong hand - stop */
+  if(cards>=5 && score>=40) return risk > (behind ? 0.25 : 0.15);
+  if(cards>=4 && score>=30) return risk > (behind ? 0.20 : 0.12);
+
+  /* Moderate hand */
+  if(cards>=3 && score>=20) return risk > (behind ? 0.18 : 0.10);
+  if(cards>=2 && score>=15) return risk > (behind ? 0.15 : 0.08);
+
+  /* Low hand - keep going unless very risky */
+  if(cards>=1 && score>=10) return risk > (behind ? 0.12 : 0.06);
+
+  /* Empty or weak - almost always flip */
+  if(cards===0) return false;
+
+  /* One card, low score */
+  return risk > (behind ? 0.10 : 0.05) && score >= 8;
+}
+
+
+/* ═══ Turn Management ═══ */
+function getActivePlayers(){
+  return players.filter(p=>p.status==='active');
+}
+
+const TURN_ORDER = [0, 2, 1, 3];
+function nextTurnIdx(from){
+  const ci = TURN_ORDER.indexOf(from);
+  for(let i=1;i<=4;i++){
+    const idx = TURN_ORDER[(ci+i)%4];
+    if(players[idx].status==='active') return idx;
+  }
+  return -1;
+}
+
+function isRoundOver(){
+  return getActivePlayers().length===0 || players.some(p=>p.flip7);
+}
+
+async function scheduleTurn(){
+  if(gameOver) return;
+  if(isRoundOver()){
+    await endRound();
+    return;
+  }
+
+  const p = players[currentTurn];
+  if(p.status!=='active'){
+    const next = nextTurnIdx(currentTurn);
+    if(next===-1){ await endRound(); return; }
+    currentTurn = next;
+    scheduleTurn();
+    return;
+  }
+
+  render();
+
+  if(p.isHuman){
+    document.getElementById('btnFlip').disabled = false;
+    document.getElementById('btnStop').disabled = false;
+    document.getElementById('deckBtn').classList.add('can-flip');
+    return;
+  }
+
+  /* Bot turn */
+  document.getElementById('btnFlip').disabled = true;
+  document.getElementById('btnStop').disabled = true;
+  document.getElementById('deckBtn').classList.remove('can-flip');
+
+  await runBotTurn(p);
+}
+
+async function runBotTurn(p){
+  if(p.status!=='active' || gameOver) { advanceTurn(); return; }
+  await sleep(randBetween(1000, 2000));
+  if(botShouldStop(p)){
+    p.status = 'stopped';
+    log(p.name + ' 选择停牌');
+    render();
+    advanceTurn();
+    return;
+  }
+  const outcome = await executeFlip(p);
+  if(outcome==='flip7'){ await endRound(); return; }
+  if(!gameOver) advanceTurn();
+}
+
+async function doFlip(p){
+  processing = true;
+  document.getElementById('btnFlip').disabled = true;
+  document.getElementById('btnStop').disabled = true;
+  document.getElementById('deckBtn').classList.remove('can-flip');
+  const outcome = await executeFlip(p);
+  processing = false;
+  if(outcome==='flip7'){ await endRound(); return; }
+  advanceTurn();
+}
+
+async function executeFlip(p){
+  const card = drawCard();
+  if(!card){
+    log('牌堆已空，' + p.name + ' 被迫停牌');
+    p.status = 'stopped';
+    render();
+    return 'stop';
+  }
+  const result = await processDrawnCard(p, card);
+  if(result.flip7) return 'flip7';
+  if(result.busted) return 'bust';
+  return 'ok';
+}
+
+function advanceTurn(){
+  if(isRoundOver()){ endRound(); return; }
+  const next = nextTurnIdx(currentTurn);
+  if(next===-1){ endRound(); return; }
+  currentTurn = next;
+  scheduleTurn();
+}
+
+function humanStop(){
+  if(processing || gameOver) return;
+  const p = players[currentTurn];
+  if(!p.isHuman || p.status!=='active') return;
+  p.status = 'stopped';
+  log(p.name + ' 选择停牌');
+  document.getElementById('btnFlip').disabled = true;
+  document.getElementById('btnStop').disabled = true;
+  document.getElementById('deckBtn').classList.remove('can-flip');
+  render();
+  advanceTurn();
+}
+
+function humanFlip(){
+  if(processing || gameOver) return;
+  const p = players[currentTurn];
+  if(!p.isHuman || p.status!=='active') return;
+  doFlip(p);
+}
+
+/* ═══ Round End ═══ */
+async function endRound(){
+  if(gameOver) return;
+  processing = true;
+  document.getElementById('btnFlip').disabled = true;
+  document.getElementById('btnStop').disabled = true;
+  document.getElementById('deckBtn').classList.remove('can-flip');
+
+  /* Auto-stop remaining active players */
+  players.forEach(p=>{
+    if(p.status==='active') p.status = 'stopped';
+    p.roundScore = calcRoundScore(p);
+    p.totalScore += p.roundScore;
+  });
+
+  render();
+  await sleep(300);
+
+  let summary = '第 ' + roundNum + ' 局结算：';
+  players.forEach(p=>{
+    summary += ' ' + p.name + '(+' + p.roundScore + ')';
+  });
+  log(summary, true);
+
+  showBanner('第 ' + roundNum + ' 局结束',
+    players.map(p=>p.emoji+' '+p.name+': +'+p.roundScore+' → 总分 '+p.totalScore).join('\n'));
+
+  await sleep(2500);
+  hideBanner();
+
+  const winner = players.find(p=>p.totalScore>=WIN_SCORE);
+  if(winner){
+    endGame(winner);
+    return;
+  }
+
+  roundNum++;
+  resetRoundState();
+  currentTurn = 0;
+  log('—— 第 ' + roundNum + ' 局开始 ——', true);
+  render();
+  processing = false;
+  scheduleTurn();
+}
+
+function showBanner(title, text){
+  document.getElementById('bannerTitle').textContent = title;
+  document.getElementById('bannerText').textContent = text;
+  document.getElementById('banner').classList.add('show');
+}
+function hideBanner(){
+  document.getElementById('banner').classList.remove('show');
+}
+
+function showFlip7Fx(){
+  const fx = document.getElementById('flip7Fx');
+  fx.innerHTML = '<div class="flip7-text">🎉 FLIP 7! 🎉</div>';
+  setTimeout(()=>{ fx.innerHTML=''; }, 900);
+}
+
+/* ═══ End Game ═══ */
+function endGame(winner){
+  gameOver = true;
+  processing = true;
+
+  const ranked = [...players].sort((a,b)=>b.totalScore-a.totalScore);
+
+  let starsDelta = 0, coinsEarned = 0;
+  let rewardsHTML = '';
+
+  if(IS_COMPETE){
+    const stats = loadStats();
+    if(winner.isHuman){
+      starsDelta = 1;
+      coinsEarned = Math.max(10, Math.floor(winner.totalScore / 5));
+      stats.stars = stats.stars + 1;
+      stats.coins = stats.coins + coinsEarned;
+      rewardsHTML = '<div class="reward-positive">⭐ +1 星 (当前 ' + stats.stars + ' 星)</div>'
+        + '<div class="reward-positive">🪙 +' + coinsEarned + ' 金币 (当前 ' + stats.coins + ')</div>';
+    } else {
+      starsDelta = -1;
+      stats.stars = Math.max(0, stats.stars - 1);
+      rewardsHTML = '<div class="reward-negative">⭐ -1 星 (当前 ' + stats.stars + ' 星)</div>'
+        + '<div>🪙 未获得金币</div>';
+    }
+    saveStats(stats.stars, stats.coins);
+  } else {
+    rewardsHTML = '<div>娱乐模式 - 无排位变化</div>';
+  }
+
+  if(IS_BATTLE){
+    const bs = battleSettle(winner.isHuman);
+    if(winner.isHuman){
+      rewardsHTML = '<div class="reward-positive">❤️ 返还 ' + bs.hpReturn + ' 血量 (消耗' + bs.totalConsumed + ')</div>'
+        + '<div class="reward-positive">🔮 +' + bs.crystalReward + ' 紫晶</div>'
+        + '<div>当前血量: ' + battleState.hp + ' · 紫晶: ' + battleState.crystals + '</div>';
+    } else {
+      rewardsHTML = '<div class="reward-negative">❤️ 失去 ' + bs.totalConsumed + ' 血量</div>'
+        + '<div>当前血量: ' + battleState.hp + '</div>';
+    }
+  }
+
+  const rankHTML = ranked.map((p,i)=>{
+    const cls = i===0 ? 'rank-row winner' : 'rank-row';
+    return '<div class="'+cls+'"><span class="rank-pos">'+(i+1)+'</span><span class="rank-emoji">'+p.emoji+'</span><span class="rank-name">'+p.name+'</span><span class="rank-score">'+p.totalScore+'</span></div>';
+  }).join('');
+
+  document.getElementById('endTitle').textContent = winner.isHuman ? '🎉 你赢了！' : '😢 游戏结束';
+  document.getElementById('endRanking').innerHTML = rankHTML;
+  document.getElementById('endRewards').innerHTML = rewardsHTML;
+  document.getElementById('endOverlay').classList.add('show');
+
+  log(winner.name + ' 达到 ' + WIN_SCORE + ' 分，赢得游戏！', true);
+}
+
+function returnToLobby(){
+  const ranked = [...players].sort((a,b)=>b.totalScore-a.totalScore);
+  const humanIdx = ranked.findIndex(p=>p.isHuman);
+  const placement = humanIdx + 1;
+  cellarSettlement(placement, 4, 'Flip7');
+}
+
+/* ═══ Render ═══ */
+function renderCard(c, faceDown){
+  const el = document.createElement('div');
+  if(faceDown){
+    el.className = 'card face-down';
+    return el;
+  }
+  el.className = 'card';
+  if(c.type==='number') el.classList.add('number');
+  else if(c.type==='bonus') el.classList.add('bonus');
+  else if(c.type==='multiplier') el.classList.add('multiplier');
+  else if(c.type==='safety') el.classList.add('safety');
+  else el.classList.add('action');
+  el.textContent = cardLabel(c);
+  return el;
+}
+
+function renderPlayer(p){
+  const pos = POS_MAP[p.idx];
+  const el = document.getElementById('player'+p.idx);
+  el.className = 'player-area ' + pos + (p.idx===currentTurn && p.status==='active' ? ' active-player' : '');
+
+  const showFaceUp = true;
+
+  let statusText = '进行中', statusCls = 'active-s';
+  if(p.status==='stopped'){ statusText='已停牌'; statusCls='stopped'; }
+  if(p.status==='busted'){ statusText='爆牌'; statusCls='busted'; }
+
+  let cardsHTML = '';
+  const nums = p.numbers.map(c=>renderCard(c, !showFaceUp).outerHTML).join('');
+  let extra = '';
+  if(p.safety>0) extra += renderCard({type:'safety'},false).outerHTML;
+  if(p.multiplier>1) extra += renderCard({type:'multiplier',value:2},false).outerHTML;
+  if(p.bonusAdd>0) extra += renderCard({type:'bonus',value:p.bonusAdd},false).outerHTML;
+
+  const isVert = pos==='left' || pos==='right';
+
+  el.innerHTML =
+    '<div class="player-header">' +
+      '<div class="player-avatar">'+p.emoji+'</div>' +
+      '<div><div class="player-name">'+p.name+'</div>' +
+      '<div class="player-total">总分 '+p.totalScore+'</div></div>' +
+      '<span class="player-status '+statusCls+'">'+statusText+'</span>' +
+    '</div>' +
+    '<div class="player-cards'+(isVert?' vertical':'')+'">'+nums+extra+'</div>' +
+    (p.status!=='busted' && p.numbers.length>0 ? '<div class="round-score">本局 '+calcRoundScore(p)+'分</div>' : '') +
+    (p.flip7 ? '<div class="round-score" style="color:#ff6f00">Flip7!</div>' : '');
+}
+
+function render(){
+  players.forEach(renderPlayer);
+  document.getElementById('deckCount').textContent = deck.length + ' 张';
+  document.getElementById('roundInfo').textContent = '第 ' + roundNum + ' 局 · 目标 ' + WIN_SCORE + ' 分';
+
+  const topDiscard = discard.length > 0 ? discard[discard.length-1] : null;
+  const dp = document.getElementById('discardPile');
+  if(topDiscard){
+    dp.innerHTML = '';
+    dp.appendChild(renderCard(topDiscard, false));
+  } else {
+    dp.textContent = '弃牌';
+  }
+}
+
+/* ═══ Event Bindings ═══ */
+document.getElementById('btnFlip').onclick = humanFlip;
+document.getElementById('btnStop').onclick = humanStop;
+document.getElementById('deckBtn').onclick = ()=>{
+  const p = players[currentTurn];
+  if(p && p.isHuman && p.status==='active' && !processing) humanFlip();
+};
+
+/* ═══ Start ═══ */
+initGame();
+
+})();
+</script>
+<script src="cellar-roulette.js"></script>
+</body>
+</html>

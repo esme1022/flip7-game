@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Flip7 狂暴</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;user-select:none;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%;overflow:hidden;background:#1a0a2e;font-family:'Noto Sans SC',system-ui,sans-serif}
+body{display:flex;align-items:center;justify-content:center}
+
+#scaleWrap{width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden}
+#game{
+  width:960px;height:540px;position:relative;overflow:hidden;
+  background:linear-gradient(145deg,#e8d5f5 0%,#d4b8e8 30%,#c9a8df 60%,#d8c0ec 100%);
+  border-radius:14px;border:2px solid #c9b3e0;
+  transform-origin:center center;
+}
+
+.exit-btn{
+  position:absolute;top:6px;left:8px;z-index:30;
+  width:32px;height:32px;border-radius:50%;border:none;cursor:pointer;
+  background:rgba(255,255,255,.55);color:#4a2070;font-size:18px;font-weight:900;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .15s;backdrop-filter:blur(4px);
+}
+.exit-btn:hover{background:rgba(255,255,255,.85)}
+.header{
+  position:absolute;top:0;left:0;right:180px;height:36px;
+  display:flex;align-items:center;padding:0 12px 0 44px;gap:10px;z-index:20;
+}
+.table-surface{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:560px;height:340px;border-radius:50%;
+  background:radial-gradient(ellipse at 50% 40%,#b088d0 0%,#8a60b0 40%,#6a3f90 80%,#5a2f80 100%);
+  box-shadow:0 8px 32px rgba(60,20,100,.4),inset 0 4px 20px rgba(255,255,255,.08);
+  border:5px solid rgba(180,140,220,.5);
+  z-index:1;margin-right:90px;
+}
+.game-title{font-size:14px;font-weight:900;color:#4a2070}
+.round-info{font-size:11px;color:#7a5090;font-weight:700;margin-left:auto}
+.mode-badge{
+  font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;
+  background:rgba(124,77,255,.25);color:#651fff;
+}
+
+.log-panel{
+  position:absolute;top:0;right:0;width:180px;height:100%;
+  background:rgba(255,255,255,.35);border-left:1.5px solid rgba(255,255,255,.6);
+  display:flex;flex-direction:column;z-index:15;
+}
+.log-title{
+  padding:8px 10px;font-size:11px;font-weight:900;color:#4a2070;
+  border-bottom:1px solid rgba(255,255,255,.5);flex-shrink:0;
+}
+.log-body{
+  flex:1;overflow-y:auto;padding:6px 8px;
+  display:flex;flex-direction:column;gap:4px;
+}
+.log-entry{
+  font-size:10px;line-height:1.35;color:#5a3070;
+  padding:3px 6px;border-radius:6px;background:rgba(255,255,255,.4);
+  animation:logIn .3s ease;
+}
+.log-entry.highlight{background:rgba(124,77,255,.2);color:#4a2070;font-weight:700}
+@keyframes logIn{from{opacity:0;transform:translateX(8px)}to{opacity:1;transform:none}}
+
+.player-area{
+  position:absolute;display:flex;flex-direction:column;align-items:center;gap:3px;
+  transition:filter .2s;z-index:5;
+}
+.player-area.active-player{filter:drop-shadow(0 0 8px rgba(124,77,255,.6))}
+.player-area.top{top:36px;left:50%;transform:translateX(-50%)}
+.player-area.right{top:50%;right:185px;transform:translateY(-50%)}
+.player-area.bottom{bottom:20px;left:50%;transform:translateX(-50%)}
+.player-area.left{top:50%;left:16px;transform:translateY(-50%)}
+
+.player-header{display:flex;align-items:center;gap:5px}
+.player-avatar{
+  width:32px;height:32px;border-radius:50%;font-size:18px;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,.55);border:2px solid rgba(160,108,213,.5);
+}
+.player-name{font-size:11px;font-weight:700;color:#4a2070;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.player-total{font-size:10px;color:#8a60b0;font-weight:700}
+.player-status{
+  font-size:9px;font-weight:700;padding:1px 7px;border-radius:8px;
+  background:rgba(255,255,255,.5);color:#7a5090;
+}
+.player-status.stayed{background:rgba(100,180,100,.3);color:#2d6b2d}
+.player-status.busted{background:rgba(220,80,80,.3);color:#a02020}
+.player-status.active-s{background:rgba(124,77,255,.25);color:#651fff}
+
+.player-cards{
+  display:flex;gap:3px;flex-wrap:wrap;justify-content:center;
+  max-width:220px;min-height:36px;
+}
+.player-cards.vertical{flex-direction:column;max-width:50px;max-height:160px}
+
+.card{
+  width:28px;height:38px;border-radius:5px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:900;position:relative;
+  box-shadow:0 2px 4px rgba(0,0,0,.15);
+  transition:transform .15s;
+}
+.card.number{background:linear-gradient(135deg,#fff,#f0e6ff);color:#4a2070;border:1.5px solid #c9a8df}
+.card.face-down{background:linear-gradient(135deg,#7c4dff,#651fff);color:transparent;border:1.5px solid #5e35b1}
+.card.face-down::after{content:'?';color:rgba(255,255,255,.7);font-size:14px;position:absolute}
+.card.score-pos{background:linear-gradient(135deg,#66bb6a,#43a047);color:#fff;border:1.5px solid #2e7d32;font-size:10px}
+.card.score-neg{background:linear-gradient(135deg,#ef5350,#c62828);color:#fff;border:1.5px solid #b71c1c;font-size:10px}
+.card.score-mul{background:linear-gradient(135deg,#ff7043,#e64a19);color:#fff;border:1.5px solid #bf360c;font-size:10px}
+.card.safety{background:linear-gradient(135deg,#4fc3f7,#0288d1);color:#fff;border:1.5px solid #01579b;font-size:9px}
+.card.action{background:linear-gradient(135deg,#ab47bc,#7b1fa2);color:#fff;border:1.5px solid #6a1b9a;font-size:9px}
+.card.color0{
+  background:linear-gradient(135deg,#fff,#f0e6ff);color:#4a2070;
+  border:2px solid transparent;
+  background-clip:padding-box;
+  box-shadow:0 0 0 2px #ff6ec7,0 0 0 4px #ffd54f,0 0 0 6px #69f0ae,0 0 0 8px #40c4ff;
+}
+.card.bad7{background:linear-gradient(135deg,#37474f,#263238);color:#ef5350;border:1.5px solid #1a1a1a;font-size:10px}
+.card.color13{
+  background:linear-gradient(135deg,#fff8e1,#ffd54f);color:#5d4037;
+  border:2px solid #ffb300;box-shadow:0 0 6px rgba(255,193,7,.5);
+}
+.card.held-func{border:2px dashed #ff9800;box-shadow:0 0 6px rgba(255,152,0,.4)}
+.card.selectable{cursor:pointer;transform:scale(1.08)}
+.card.selectable:hover{transform:scale(1.15);box-shadow:0 4px 12px rgba(124,77,255,.4)}
+.card.selected{outline:2px solid #651fff;transform:scale(1.12)}
+.card.draw-anim{animation:cardDraw .4s ease}
+@keyframes cardDraw{0%{transform:scale(.3) rotate(-20deg);opacity:0}100%{transform:none;opacity:1}}
+
+.round-score{
+  font-size:10px;font-weight:700;color:#651fff;
+  background:rgba(255,255,255,.45);padding:1px 8px;border-radius:8px;
+}
+
+.center-area{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  margin-right:90px;z-index:5;
+}
+.deck-area{display:flex;align-items:center;gap:16px}
+.deck-stack{
+  width:52px;height:72px;border-radius:8px;cursor:pointer;
+  background:linear-gradient(135deg,#7c4dff,#651fff);
+  border:2px solid #5e35b1;position:relative;
+  box-shadow:0 4px 12px rgba(101,31,255,.35);
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .15s,box-shadow .15s;
+}
+.deck-stack::before,.deck-stack::after{
+  content:'';position:absolute;width:52px;height:72px;border-radius:8px;
+  background:linear-gradient(135deg,#8e6bff,#7244ff);border:2px solid #5e35b1;
+}
+.deck-stack::before{transform:translate(-3px,-3px);z-index:-1}
+.deck-stack::after{transform:translate(-6px,-6px);z-index:-2}
+.deck-stack.can-flip:hover{transform:translateY(-4px);box-shadow:0 8px 20px rgba(101,31,255,.5)}
+.deck-stack.can-flip:active{transform:scale(.95)}
+.deck-label{font-size:11px;font-weight:900;color:#fff;z-index:1;text-shadow:0 1px 3px rgba(0,0,0,.3)}
+.deck-count{font-size:10px;color:#7a5090;font-weight:700}
+.discard-pile{
+  width:44px;height:62px;border-radius:7px;
+  background:rgba(255,255,255,.3);border:1.5px dashed rgba(160,108,213,.4);
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;color:#8a60b0;font-weight:700;
+}
+
+.action-buttons{display:flex;gap:10px;margin-top:4px}
+.btn{
+  padding:8px 22px;border-radius:20px;border:none;cursor:pointer;
+  font-size:14px;font-weight:900;font-family:inherit;
+  transition:transform .15s,box-shadow .15s;
+  box-shadow:0 3px 10px rgba(0,0,0,.15);
+}
+.btn:hover{transform:translateY(-2px);box-shadow:0 5px 14px rgba(0,0,0,.2)}
+.btn:active{transform:scale(.96)}
+.btn:disabled{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-flip{background:linear-gradient(135deg,#7c4dff,#651fff);color:#fff}
+.btn-stay{background:linear-gradient(135deg,#66bb6a,#43a047);color:#fff}
+.card.modifier{background:linear-gradient(135deg,#ef5350,#c62828);color:#fff;border:1.5px solid #b71c1c;font-size:10px}
+.card.modifier.div2{background:linear-gradient(135deg,#ff7043,#e64a19);border-color:#bf360c}
+
+.overlay{
+  position:absolute;inset:0;background:rgba(30,10,50,.55);
+  display:none;align-items:center;justify-content:center;z-index:50;
+  backdrop-filter:blur(3px);
+}
+.overlay.show{display:flex}
+.target-panel{
+  background:linear-gradient(145deg,#f5e6ff,#e0c8f0);
+  border:2px solid #c9a8df;border-radius:16px;padding:20px 24px;
+  text-align:center;min-width:280px;max-width:420px;box-shadow:0 8px 32px rgba(0,0,0,.25);
+}
+.target-title{font-size:16px;font-weight:900;color:#4a2070;margin-bottom:4px}
+.target-sub{font-size:11px;color:#7a5090;margin-bottom:14px}
+.target-list{display:flex;flex-direction:column;gap:8px}
+.target-btn{
+  display:flex;align-items:center;gap:10px;padding:10px 16px;
+  border-radius:12px;border:1.5px solid rgba(160,108,213,.4);
+  background:rgba(255,255,255,.55);cursor:pointer;
+  font-size:13px;font-weight:700;color:#4a2070;
+  transition:background .15s,transform .15s;
+}
+.target-btn:hover{background:rgba(255,255,255,.85);transform:scale(1.02)}
+.target-btn.disabled{opacity:.35;pointer-events:none}
+.target-btn .t-emoji{font-size:22px}
+.target-btn .t-info{text-align:left;flex:1}
+.target-btn .t-name{font-size:13px}
+.target-btn .t-detail{font-size:10px;color:#8a60b0;font-weight:400}
+
+.card-select-grid{
+  display:flex;flex-wrap:wrap;gap:8px;justify-content:center;
+  margin:12px 0;min-height:50px;
+}
+.card-select-grid .card{width:36px;height:50px;font-size:14px}
+
+.banner{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  background:rgba(255,255,255,.92);border:2px solid #c9a8df;
+  border-radius:16px;padding:16px 28px;text-align:center;
+  z-index:40;box-shadow:0 8px 32px rgba(0,0,0,.2);
+  animation:bannerIn .4s ease;display:none;
+}
+.banner.show{display:block}
+@keyframes bannerIn{from{opacity:0;transform:translate(-50%,-50%) scale(.8)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+.banner-title{font-size:20px;font-weight:900;color:#651fff;margin-bottom:6px}
+.banner-text{font-size:12px;color:#5a3070;line-height:1.6;white-space:pre-line}
+
+.end-overlay{
+  position:absolute;inset:0;background:rgba(30,10,50,.7);
+  display:none;align-items:center;justify-content:center;z-index:60;
+  backdrop-filter:blur(4px);
+}
+.end-overlay.show{display:flex}
+.end-panel{
+  background:linear-gradient(145deg,#f5e6ff,#e0c8f0);
+  border:2px solid #c9a8df;border-radius:20px;padding:24px 32px;
+  text-align:center;min-width:360px;max-width:420px;
+  box-shadow:0 12px 40px rgba(0,0,0,.3);
+  animation:bannerIn .5s ease;
+}
+.end-title{font-size:22px;font-weight:900;color:#651fff;margin-bottom:12px}
+.end-ranking{margin:12px 0;display:flex;flex-direction:column;gap:6px}
+.rank-row{
+  display:flex;align-items:center;gap:8px;padding:6px 12px;
+  border-radius:10px;background:rgba(255,255,255,.5);font-size:13px;
+}
+.rank-row.winner{background:rgba(255,215,0,.25);border:1.5px solid rgba(255,193,7,.5)}
+.rank-pos{font-weight:900;color:#651fff;width:24px}
+.rank-emoji{font-size:20px}
+.rank-name{flex:1;text-align:left;font-weight:700;color:#4a2070}
+.rank-score{font-weight:900;color:#651fff}
+.end-rewards{font-size:12px;color:#5a3070;margin:10px 0;line-height:1.8}
+.end-rewards .reward-positive{color:#2e7d32;font-weight:700}
+.end-rewards .reward-negative{color:#c62828;font-weight:700}
+.btn-lobby{
+  margin-top:14px;padding:10px 32px;border-radius:20px;border:none;cursor:pointer;
+  font-size:15px;font-weight:900;font-family:inherit;color:#fff;
+  background:linear-gradient(135deg,#7c4dff,#651fff);
+  box-shadow:0 4px 14px rgba(101,31,255,.4);
+  transition:transform .15s;
+}
+.btn-lobby:hover{transform:scale(1.04)}
+
+.flip7-fx{
+  position:absolute;inset:0;pointer-events:none;z-index:45;
+  display:flex;align-items:center;justify-content:center;
+}
+.flip7-text{
+  font-size:48px;font-weight:900;color:#651fff;
+  text-shadow:0 0 20px rgba(124,77,255,.6),0 2px 8px rgba(0,0,0,.2);
+  animation:flip7Pop .8s ease forwards;opacity:0;
+}
+@keyframes flip7Pop{
+  0%{opacity:0;transform:scale(.3) rotate(-10deg)}
+  50%{opacity:1;transform:scale(1.2) rotate(3deg)}
+  100%{opacity:0;transform:scale(1) translateY(-30px)}
+}
+
+.raise-panel{
+  position:absolute;z-index:55;display:none;flex-direction:column;gap:6px;
+  background:rgba(255,255,255,.92);border:2px solid #ff7043;border-radius:12px;
+  padding:10px 12px;box-shadow:0 6px 20px rgba(230,81,0,.3);
+  animation:raiseIn .3s ease;
+}
+.raise-panel.show{display:flex}
+@keyframes raiseIn{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
+.raise-panel-title{font-size:10px;font-weight:700;color:#bf360c;text-align:center}
+.raise-btn{
+  padding:6px 14px;border-radius:10px;border:none;cursor:pointer;
+  font-size:12px;font-weight:900;font-family:inherit;color:#fff;
+  background:linear-gradient(135deg,#ff7043,#e64a19);
+  transition:transform .12s,opacity .12s;
+}
+.raise-btn:hover{transform:scale(1.05)}
+.raise-btn.used{opacity:0;pointer-events:none;height:0;padding:0;margin:0;overflow:hidden}
+
+.battle-bar{
+  position:absolute;top:6px;left:50%;transform:translateX(-50%);z-index:25;
+  display:none;align-items:center;gap:14px;
+  background:linear-gradient(135deg,rgba(230,81,0,.12),rgba(255,152,0,.12));
+  border:1.5px solid rgba(230,81,0,.35);
+  border-radius:20px;padding:5px 18px;backdrop-filter:blur(4px);
+  font-size:12px;font-weight:700;
+}
+.battle-bar .hp-val{color:#d32f2f}
+.battle-bar .crystal-val{color:#7b1fa2}
+.battle-bar .consume-val{color:#e65100}
+.battle-bar .raise-count{color:#bf360c;font-size:10px}
+
+/* Action FX */
+.action-toast{
+  position:absolute;top:42%;left:50%;transform:translate(-50%,-50%);
+  background:rgba(60,10,100,.88);color:#fff;
+  border-radius:14px;padding:10px 22px;
+  font-size:15px;font-weight:900;
+  z-index:46;pointer-events:none;
+  white-space:nowrap;
+  animation:actionToastAnim 2s ease forwards;
+  margin-right:90px;
+}
+@keyframes actionToastAnim{
+  0%{opacity:0;transform:translate(-50%,-50%) scale(.7)}
+  18%{opacity:1;transform:translate(-50%,-50%) scale(1.05)}
+  65%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  100%{opacity:0;transform:translate(-50%,-56%) scale(.95)}
+}
+.player-area.action-target{animation:targetFlash .7s ease 2}
+@keyframes targetFlash{
+  0%{filter:drop-shadow(0 0 6px rgba(255,80,80,0))}
+  50%{filter:drop-shadow(0 0 18px rgba(255,80,80,.9))}
+  100%{filter:drop-shadow(0 0 6px rgba(255,80,80,0))}
+}
+</style>
+</head>
+<body>
+<div id="scaleWrap">
+<div id="game">
+  <button class="exit-btn" onclick="location.href='/lobby-design.html'" title="返回大厅">←</button>
+  <div class="header">
+    <span class="game-title" id="gameTitle">Flip7 狂暴</span>
+    <span class="mode-badge" id="modeBadge"></span>
+    <span class="round-info" id="roundInfo">第 1 局 · 目标 200 分</span>
+  </div>
+
+  <div class="battle-bar" id="battleBar">
+    <span>❤️ <span class="hp-val" id="hpVal">0</span></span>
+    <span>🔮 <span class="crystal-val" id="crystalVal">0</span></span>
+    <span>本局消耗: <span class="consume-val" id="consumeVal">10</span></span>
+    <span class="raise-count">加注: <span id="raiseVal">0</span>次</span>
+  </div>
+
+  <div class="table-surface"></div>
+
+  <div class="player-area top" id="player1"></div>
+  <div class="player-area right" id="player2"></div>
+  <div class="player-area bottom" id="player0"></div>
+  <div class="player-area left" id="player3"></div>
+
+  <div class="center-area">
+    <div class="deck-area">
+      <div class="deck-stack" id="deckBtn"><span class="deck-label">牌堆</span></div>
+      <div><div class="deck-count" id="deckCount">108 张</div></div>
+      <div class="discard-pile" id="discardPile">弃牌</div>
+    </div>
+    <div class="action-buttons" id="actionBtns">
+      <button class="btn btn-flip" id="btnFlip" disabled>翻牌</button>
+      <button class="btn btn-stay" id="btnStay" disabled>停牌</button>
+    </div>
+  </div>
+
+  <div class="log-panel">
+    <div class="log-title">📋 游戏日志</div>
+    <div class="log-body" id="logBody"></div>
+  </div>
+
+  <div class="banner" id="banner">
+    <div class="banner-title" id="bannerTitle"></div>
+    <div class="banner-text" id="bannerText"></div>
+  </div>
+
+  <div class="flip7-fx" id="flip7Fx"></div>
+  <div id="actionFxLayer"></div>
+
+  <div class="overlay" id="targetOverlay">
+    <div class="target-panel">
+      <div class="target-title" id="targetTitle">选择目标</div>
+      <div class="target-sub" id="targetSub"></div>
+      <div class="target-list" id="targetList"></div>
+    </div>
+  </div>
+
+  <div class="overlay" id="cardSelectOverlay">
+    <div class="target-panel">
+      <div class="target-title" id="cardSelectTitle">选择卡牌</div>
+      <div class="target-sub" id="cardSelectSub"></div>
+      <div class="card-select-grid" id="cardSelectGrid"></div>
+      <div id="cardSelectActions"></div>
+    </div>
+  </div>
+
+  <div class="end-overlay" id="endOverlay">
+    <div class="end-panel">
+      <div class="end-title" id="endTitle">🎉 游戏结束</div>
+      <div class="end-ranking" id="endRanking"></div>
+      <div class="end-rewards" id="endRewards"></div>
+      <button class="btn-lobby" onclick="location.href='/lobby-design.html'">返回大厅</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+const params = new URLSearchParams(location.search);
+const HUMAN_NAME = params.get('nick') || '玩家';
+const HUMAN_EMOJI = params.get('emoji') || '🐭';
+const GAME_MODE = params.get('mode') || 'fun';
+const GAME_NAME = params.get('game') || 'Flip7 狂暴';
+const IS_BATTLE = GAME_MODE === 'battle';
+
+const battleState = {
+  hp: (() => {
+    if (!localStorage.getItem('battle_hp_reset')) {
+      localStorage.setItem('battle_hp', '0');
+      localStorage.setItem('battle_crystals', '0');
+      localStorage.setItem('battle_hp_reset', '1');
+    }
+    return parseInt(localStorage.getItem('battle_hp') || '0', 10);
+  })(),
+  crystals: parseInt(localStorage.getItem('battle_crystals') || '0', 10),
+  entryFee: 10, raiseCount: 0, totalConsumed: 0
+};
+function initBattle() {
+  if (!IS_BATTLE) return;
+  battleState.totalConsumed = battleState.entryFee;
+  battleState.hp -= battleState.entryFee;
+  saveBattleData(); updateBattleUI();
+  document.getElementById('battleBar').style.display = 'flex';
+}
+function battleRaise() {
+  if (!IS_BATTLE) return;
+  battleState.raiseCount++; battleState.totalConsumed += battleState.entryFee;
+  battleState.hp -= battleState.entryFee; saveBattleData(); updateBattleUI();
+}
+function battleSettle(isWinner) {
+  if (!IS_BATTLE) return {};
+  let hpReturn = 0, crystalReward = 0;
+  if (isWinner) {
+    hpReturn = Math.floor(battleState.totalConsumed * 0.9);
+    crystalReward = battleState.totalConsumed;
+    battleState.hp += hpReturn; battleState.crystals += crystalReward;
+  }
+  saveBattleData();
+  return { totalConsumed: battleState.totalConsumed, hpReturn, crystalReward, raiseCount: battleState.raiseCount };
+}
+function saveBattleData() {
+  localStorage.setItem('battle_hp', String(battleState.hp));
+  localStorage.setItem('battle_crystals', String(battleState.crystals));
+}
+function updateBattleUI() {
+  document.getElementById('hpVal').textContent = battleState.hp;
+  document.getElementById('crystalVal').textContent = battleState.crystals;
+  document.getElementById('consumeVal').textContent = battleState.totalConsumed;
+  document.getElementById('raiseVal').textContent = battleState.raiseCount;
+}
+
+const WIN_SCORE = 200;
+const BOT_DEFS = [
+  { name: HUMAN_NAME, emoji: HUMAN_EMOJI, isHuman: true },
+  { name: '小狐狸bot', emoji: '🦊', isHuman: false },
+  { name: '布丁熊bot', emoji: '🐻', isHuman: false },
+  { name: '芒果鱼bot', emoji: '🐟', isHuman: false }
+];
+const POS_MAP = ['bottom', 'top', 'right', 'left'];
+const CW_ORDER = [0, 3, 1, 2];
+
+const ACTION_META = {
+  justOneMore: { title: '1️⃣ 再来一张', icon: '1️⃣', sub: '目标翻1张后必须停牌' },
+  swap:        { title: '🔄 换牌', icon: '🔄', sub: '选两张任意玩家的牌互换' },
+  steal:       { title: '🃏 偷牌', icon: '🃏', sub: '拿走一名玩家的一张牌' },
+  discard:     { title: '🗑 弃牌', icon: '🗑', sub: '弃掉自己本回合的所有牌' },
+  flipFour:    { title: '4️⃣ 翻四张', icon: '4️⃣', sub: '强制目标连翻4张牌' }
+};
+
+document.getElementById('gameTitle').textContent = GAME_NAME;
+document.getElementById('modeBadge').textContent = IS_BATTLE ? '🔥 血拼模式' : '娱乐模式';
+document.getElementById('modeBadge').style.display = '';
+
+function applyScale() {
+  const s = Math.min(window.innerWidth / 960, window.innerHeight / 540);
+  document.getElementById('game').style.transform = 'scale(' + s + ')';
+}
+window.addEventListener('resize', applyScale); applyScale(); initBattle();
+
+let uidCounter = 0;
+function uid() { return 'c' + (++uidCounter); }
+function shuffle(arr) { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; }
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function randBetween(a, b) { return a + Math.random() * (b - a); }
+
+/* ===== DECK: 92 number + 6 modifier + 10 action = 108 ===== */
+function buildDeck() {
+  const d = [];
+  d.push({ type:'number', value:0, special:'zero', id:uid() });
+  for (let n = 1; n <= 13; n++) {
+    for (let i = 0; i < n; i++) {
+      let sp = null;
+      if (n === 7 && i === 0) sp = 'unlucky7';
+      if (n === 13 && i === 0) sp = 'lucky13';
+      d.push({ type:'number', value:n, special:sp, id:uid() });
+    }
+  }
+  d.push({ type:'modifier', op:'div2', value:2, id:uid() });
+  [2,4,6,8,10].forEach(v => d.push({ type:'modifier', op:'sub', value:v, id:uid() }));
+  for (let i=0;i<3;i++) d.push({ type:'action', action:'justOneMore', id:uid() });
+  for (let i=0;i<2;i++) d.push({ type:'action', action:'swap', id:uid() });
+  for (let i=0;i<2;i++) d.push({ type:'action', action:'steal', id:uid() });
+  for (let i=0;i<2;i++) d.push({ type:'action', action:'discard', id:uid() });
+  d.push({ type:'action', action:'flipFour', id:uid() });
+  return shuffle(d);
+}
+
+function makePlayer(idx) {
+  const def = BOT_DEFS[idx];
+  return { idx, name:def.name, emoji:def.emoji, isHuman:def.isHuman,
+    numbers:[], modifiers:[], status:'active', hasZero:false,
+    flip7:false, totalScore:0, roundScore:0 };
+}
+
+let players, deck, discard, roundNum, dealerIdx, currentTurn, gameOver, processing;
+let pendingResolve = null;
+
+function resetRoundState() {
+  players.forEach(p => {
+    p.numbers = []; p.modifiers = []; p.status = 'active';
+    p.hasZero = false; p.flip7 = false; p.roundScore = 0;
+  });
+  deck = buildDeck(); discard = [];
+}
+
+/* ===== CARD HELPERS ===== */
+function isDuplicateBust(player, card) {
+  if (card.type !== 'number') return false;
+  if (card.special === 'unlucky7') return false;
+  const val = card.value;
+  const existing = player.numbers.filter(c => c.value === val);
+  if (val === 13) {
+    const hasLucky = player.numbers.some(c => c.special === 'lucky13') || card.special === 'lucky13';
+    return hasLucky ? existing.length >= 2 : existing.length >= 1;
+  }
+  return existing.length >= 1;
+}
+
+function calcRoundScore(p) {
+  if (p.status === 'busted') return 0;
+  let sum = p.hasZero ? 0 : p.numbers.reduce((a, c) => a + c.value, 0);
+  if (p.modifiers.some(m => m.op === 'div2')) sum = sum / 2;
+  p.modifiers.forEach(m => { if (m.op === 'sub') sum -= m.value; });
+  if (p.flip7) sum += 15;
+  return Math.max(0, sum);
+}
+
+function checkFlip7(p) {
+  return p.numbers.length >= 7;
+}
+
+function hasZeroCard(p) {
+  return p.numbers.some(c => c.special === 'zero');
+}
+
+function log(msg, hl) {
+  const el = document.createElement('div');
+  el.className = 'log-entry' + (hl ? ' highlight' : '');
+  el.textContent = msg;
+  const body = document.getElementById('logBody');
+  body.insertBefore(el, body.firstChild);
+  while (body.children.length > 60) body.removeChild(body.lastChild);
+}
+
+function drawCard() {
+  if (deck.length === 0) {
+    if (discard.length > 0) { deck = shuffle(discard.splice(0)); log('牌堆已空，重新洗牌'); }
+    else return null;
+  }
+  return deck.pop();
+}
+
+function cardLabel(c) {
+  if (c.type === 'number') {
+    if (c.special === 'zero') return '🌈0';
+    if (c.special === 'unlucky7') return '💀7';
+    if (c.special === 'lucky13') return '🍀13';
+    return String(c.value);
+  }
+  if (c.type === 'modifier') return c.op === 'div2' ? '÷2' : '-' + c.value;
+  if (c.type === 'action') return ACTION_META[c.action] ? ACTION_META[c.action].icon : '?';
+  return '?';
+}
+
+function nonBustedPlayers() { return players.filter(p => p.status !== 'busted'); }
+function activePlayers() { return players.filter(p => p.status === 'active'); }
+
+function nextActiveIdx(from) {
+  const ci = CW_ORDER.indexOf(from);
+  for (let i = 1; i <= 4; i++) {
+    const idx = CW_ORDER[(ci + i) % 4];
+    if (players[idx].status === 'active') return idx;
+  }
+  return -1;
+}
+
+function isRoundOver() {
+  return activePlayers().length === 0 || players.some(p => p.flip7);
+}
+
+/* ===== SPECIAL NUMBER EFFECTS ===== */
+function applyUnlucky7(p, card) {
+  const old = [...p.numbers, ...p.modifiers];
+  old.forEach(c => discard.push(c));
+  p.numbers = [card];
+  p.modifiers = [];
+  p.hasZero = false;
+  log(p.name + ' 抽到💀霉运7！弃掉所有牌，只保留这张7', true);
+}
+
+function applyZero(p) {
+  p.hasZero = true;
+  log(p.name + ' 抽到🌈0！总分变为0，必须继续翻牌直到Flip7', true);
+}
+
+function applyLucky13(p) {
+  log(p.name + ' 抽到🍀幸运13！可与普通13共存');
+}
+
+/* ===== PROCESS A DRAWN CARD ===== */
+async function processCard(player, card) {
+  render();
+  if (card.type === 'number') {
+    if (card.special === 'unlucky7') {
+      applyUnlucky7(player, card);
+      render();
+      if (checkFlip7(player)) return await doFlip7(player);
+      return { ok: true };
+    }
+    if (isDuplicateBust(player, card)) {
+      player.status = 'busted';
+      discard.push(card);
+      log(player.name + ' 翻到重复的 ' + cardLabel(card) + '，爆牌！', true);
+      render();
+      return { busted: true };
+    }
+    player.numbers.push(card);
+    log(player.name + ' 翻到 ' + cardLabel(card));
+    if (card.special === 'zero') applyZero(player);
+    if (card.special === 'lucky13') applyLucky13(player);
+    render();
+    if (checkFlip7(player)) return await doFlip7(player);
+    return { ok: true };
+  }
+  if (card.type === 'modifier') {
+    return await resolveModifier(player, card);
+  }
+  if (card.type === 'action') {
+    return await resolveAction(player, card);
+  }
+  return { ok: true };
+}
+
+async function doFlip7(p) {
+  p.flip7 = true;
+  showFlip7Fx();
+  log(p.name + ' 达成 Flip7！+15 分，本回合结束！', true);
+  if (IS_BATTLE) battleRaise();
+  render(); await sleep(1200);
+  return { flip7: true };
+}
+
+/* ===== MODIFIER RESOLUTION (only for self) ===== */
+async function resolveModifier(drawer, card) {
+  if (drawer.status === 'busted') { discard.push(card); return { ok: true }; }
+  drawer.modifiers.push(card);
+  log(drawer.name + ' 获得变分牌 ' + cardLabel(card), true);
+  render();
+  return { ok: true };
+}
+
+function showActionToast(msg){
+  const el=document.createElement('div');
+  el.className='action-toast';
+  el.textContent=msg;
+  document.getElementById('actionFxLayer').appendChild(el);
+  setTimeout(()=>el.remove(),2100);
+}
+function flashTarget(player){
+  const el=document.getElementById('player'+player.idx);
+  if(!el)return;
+  el.classList.remove('action-target');
+  void el.offsetWidth;
+  el.classList.add('action-target');
+  setTimeout(()=>el.classList.remove('action-target'),1500);
+}
+
+/* ===== ACTION RESOLUTION ===== */
+async function resolveAction(drawer, card) {
+  const action = card.action;
+  discard.push(card);
+  log(drawer.name + ' 翻到 ' + ACTION_META[action].title + '！', true);
+  render(); await sleep(400);
+
+  if (action === 'justOneMore') {
+    const target = await pickActionTarget(drawer, action);
+    if (!target) return { ok: true };
+    showActionToast('1️⃣ ' + drawer.name + ' 对 ' + target.name + ' 再来一张！');
+    flashTarget(target);
+    log(drawer.name + ' 对 ' + target.name + ' 使用再来一张！');
+    const c = drawCard();
+    if (c) {
+      await sleep(400);
+      const res = await processCard(target, c);
+      if (res && res.flip7) return { flip7: true };
+    }
+    if (target.status === 'active') {
+      target.status = 'stayed';
+      log(target.name + ' 被强制停牌');
+    }
+    render();
+    return { ok: true };
+  }
+
+  if (action === 'swap') {
+    showActionToast('🔄 ' + drawer.name + ' 使用换牌！');
+    const swapResult = await doSwapAction(drawer);
+    if (swapResult && swapResult.flip7) return { flip7: true };
+    render();
+    return { ok: true };
+  }
+
+  if (action === 'steal') {
+    const target = await pickActionTarget(drawer, action);
+    if (!target || target.numbers.length + target.modifiers.length === 0) return { ok: true };
+    showActionToast('🃏 ' + drawer.name + ' 要偷 ' + target.name + ' 的牌！');
+    flashTarget(target);
+    const allCards = [...target.numbers, ...target.modifiers];
+    const stolen = drawer.isHuman ? await pickFromCards(allCards, '偷走 ' + target.name + ' 的哪张牌？') : botPickSteal(target);
+    if (!stolen) return { ok: true };
+    if (stolen.type === 'number') {
+      target.numbers = target.numbers.filter(c => c.id !== stolen.id);
+      if (stolen.special === 'zero') target.hasZero = hasZeroCard(target);
+      if (isDuplicateBust(drawer, stolen)) {
+        drawer.status = 'busted';
+        discard.push(stolen);
+        log(drawer.name + ' 偷来的 ' + cardLabel(stolen) + ' 导致爆牌！', true);
+      } else {
+        drawer.numbers.push(stolen);
+        if (stolen.special === 'zero') drawer.hasZero = true;
+        log(drawer.name + ' 从 ' + target.name + ' 偷走 ' + cardLabel(stolen));
+        if (checkFlip7(drawer)) { render(); return await doFlip7(drawer); }
+      }
+    } else {
+      target.modifiers = target.modifiers.filter(c => c.id !== stolen.id);
+      drawer.modifiers.push(stolen);
+      log(drawer.name + ' 从 ' + target.name + ' 偷走 ' + cardLabel(stolen));
+    }
+    render();
+    return { ok: true };
+  }
+
+  if (action === 'discard') {
+    showActionToast('🗑 ' + drawer.name + ' 弃掉所有手牌！');
+    const all = [...drawer.numbers, ...drawer.modifiers];
+    all.forEach(c => discard.push(c));
+    drawer.numbers = [];
+    drawer.modifiers = [];
+    drawer.hasZero = false;
+    log(drawer.name + ' 使用弃牌，丢弃本回合所有牌！', true);
+    render();
+    return { ok: true };
+  }
+
+  if (action === 'flipFour') {
+    const target = await pickActionTarget(drawer, action);
+    if (!target) return { ok: true };
+    showActionToast('4️⃣ ' + drawer.name + ' 对 ' + target.name + ' 翻四张！');
+    flashTarget(target);
+    log(drawer.name + ' 对 ' + target.name + ' 使用翻四张！');
+    if (IS_BATTLE) battleRaise();
+    const result = await doFlipFour(target);
+    if (result && result.flip7) return { flip7: true };
+    render();
+    return { ok: true };
+  }
+
+  return { ok: true };
+}
+
+/* ===== SWAP ACTION ===== */
+async function doSwapAction(drawer) {
+  const allFaceUp = [];
+  nonBustedPlayers().forEach(p => {
+    p.numbers.forEach(c => allFaceUp.push({ card: c, owner: p, ctype: 'number' }));
+    p.modifiers.forEach(c => allFaceUp.push({ card: c, owner: p, ctype: 'modifier' }));
+  });
+  if (allFaceUp.length < 2) { log('场上不足2张牌，换牌作废'); return null; }
+
+  let cardA, cardB;
+  if (drawer.isHuman) {
+    cardA = await pickSwapCard(allFaceUp, '换牌 - 选择第1张牌', null);
+    if (!cardA) return null;
+    cardB = await pickSwapCard(allFaceUp, '换牌 - 选择第2张牌', cardA);
+    if (!cardB) return null;
+  } else {
+    const result = botPickSwap(drawer, allFaceUp);
+    if (!result) return null;
+    cardA = result[0]; cardB = result[1];
+  }
+
+  const ownerA = cardA.owner, ownerB = cardB.owner;
+  const cA = cardA.card, cB = cardB.card;
+
+  if (cA.type === 'number') ownerA.numbers = ownerA.numbers.filter(c => c.id !== cA.id);
+  else ownerA.modifiers = ownerA.modifiers.filter(c => c.id !== cA.id);
+  if (cB.type === 'number') ownerB.numbers = ownerB.numbers.filter(c => c.id !== cB.id);
+  else ownerB.modifiers = ownerB.modifiers.filter(c => c.id !== cB.id);
+
+  if (cA.type === 'number') ownerB.numbers.push(cA); else ownerB.modifiers.push(cA);
+  if (cB.type === 'number') ownerA.numbers.push(cB); else ownerA.modifiers.push(cB);
+
+  log(ownerA.name + ' 的 ' + cardLabel(cA) + ' ↔ ' + ownerB.name + ' 的 ' + cardLabel(cB));
+
+  [ownerA, ownerB].forEach(p => {
+    p.hasZero = hasZeroCard(p);
+  });
+
+  for (const p of [ownerA, ownerB]) {
+    if (p.status !== 'busted') {
+      const hasDup = p.numbers.some((c, i) =>
+        p.numbers.some((c2, j) => i !== j && c.value === c2.value
+          && !(c.value === 13 && (c.special === 'lucky13' || c2.special === 'lucky13') && p.numbers.filter(x => x.value === 13).length <= 2))
+      );
+      if (hasDup) {
+        p.status = 'busted';
+        log(p.name + ' 换牌后出现重复，爆牌！', true);
+      }
+    }
+    if (p.status !== 'busted' && checkFlip7(p)) {
+      render(); return await doFlip7(p);
+    }
+  }
+  render();
+  return null;
+}
+
+function pickSwapCard(allFaceUp, title, exclude) {
+  return new Promise(resolve => {
+    pendingResolve = resolve;
+    document.getElementById('targetTitle').textContent = title;
+    document.getElementById('targetSub').textContent = '';
+    const list = document.getElementById('targetList');
+    list.innerHTML = '';
+    allFaceUp.forEach(entry => {
+      if (exclude && entry.card.id === exclude.card.id) return;
+      const btn = document.createElement('div');
+      btn.className = 'target-btn';
+      const cardEl = renderCard(entry.card, false);
+      btn.innerHTML = '<span class="t-emoji">' + entry.owner.emoji + '</span><div class="t-info"><div class="t-name">' + entry.owner.name + '</div></div>';
+      btn.prepend(cardEl);
+      btn.onclick = () => { document.getElementById('targetOverlay').classList.remove('show'); pendingResolve = null; resolve(entry); };
+      list.appendChild(btn);
+    });
+    document.getElementById('targetOverlay').classList.add('show');
+  });
+}
+
+function botPickSwap(bot, allFaceUp) {
+  const mine = allFaceUp.filter(e => e.owner.idx === bot.idx);
+  const others = allFaceUp.filter(e => e.owner.idx !== bot.idx);
+  if (mine.length === 0 || others.length === 0) {
+    if (others.length >= 2) return [others[0], others[1]];
+    return null;
+  }
+  const worstMine = [...mine].sort((a, b) => {
+    if (a.card.type === 'modifier') return -1;
+    if (b.card.type === 'modifier') return 1;
+    return a.card.value - b.card.value;
+  })[0];
+  const bestOther = [...others].sort((a, b) => {
+    if (a.card.type === 'modifier' && b.card.type !== 'modifier') return 1;
+    if (b.card.type === 'modifier' && a.card.type !== 'modifier') return -1;
+    return (b.card.value || 0) - (a.card.value || 0);
+  })[0];
+  return [worstMine, bestOther];
+}
+
+/* ===== FLIP FOUR ===== */
+async function doFlipFour(target) {
+  const queued = [];
+  let busted = false, flip7 = false;
+  for (let i = 0; i < 4; i++) {
+    if (busted || flip7 || target.status === 'busted') break;
+    await sleep(500);
+    const card = drawCard();
+    if (!card) { log('牌堆已空'); break; }
+    log(target.name + ' 翻四张(' + (i+1) + '/4): ' + cardLabel(card));
+
+    if (card.type === 'number') {
+      if (card.special === 'unlucky7') {
+        applyUnlucky7(target, card);
+        render();
+        if (checkFlip7(target)) { const r = await doFlip7(target); flip7 = true; break; }
+        continue;
+      }
+      if (isDuplicateBust(target, card)) {
+        target.status = 'busted'; discard.push(card);
+        log(target.name + ' 翻四张中爆牌！', true);
+        busted = true;
+      } else {
+        target.numbers.push(card);
+        if (card.special === 'zero') { target.hasZero = true; }
+        if (card.special === 'lucky13') { }
+        if (checkFlip7(target)) {
+          render(); const r = await doFlip7(target); flip7 = true;
+        }
+      }
+      render();
+    } else {
+      queued.push(card);
+    }
+  }
+  if (!busted && !flip7 && target.status !== 'busted') {
+    for (const qc of queued) {
+      if (target.status === 'busted') break;
+      const res = await processCard(target, qc);
+      if (res && res.flip7) return { flip7: true };
+      if (res && res.busted) break;
+    }
+  } else {
+    queued.forEach(c => discard.push(c));
+  }
+  render();
+  return flip7 ? { flip7: true } : null;
+}
+
+/* ===== TARGET PICKERS ===== */
+function pickActionTarget(drawer, action) {
+  let valid = nonBustedPlayers();
+  if (action === 'steal') {
+    valid = valid.filter(p => p.idx !== drawer.idx && (p.numbers.length + p.modifiers.length) > 0);
+  }
+  if (valid.length === 0) { log('没有有效目标，作废'); return Promise.resolve(null); }
+  if (valid.length === 1 && valid[0].idx === drawer.idx) {
+    return Promise.resolve(drawer);
+  }
+  if (drawer.isHuman) {
+    return new Promise(resolve => {
+      pendingResolve = resolve;
+      const meta = ACTION_META[action];
+      document.getElementById('targetTitle').textContent = meta.title + ' - 选择目标';
+      document.getElementById('targetSub').textContent = meta.sub;
+      const list = document.getElementById('targetList');
+      list.innerHTML = '';
+      valid.forEach(p => {
+        const btn = document.createElement('div');
+        btn.className = 'target-btn';
+        btn.innerHTML = '<span class="t-emoji">' + p.emoji + '</span><div class="t-info"><div class="t-name">' + p.name + (p.idx === drawer.idx ? '（自己）' : '') + '</div><div class="t-detail">' + p.numbers.length + '张牌 · ' + calcRoundScore(p) + '分</div></div>';
+        btn.onclick = () => { document.getElementById('targetOverlay').classList.remove('show'); pendingResolve = null; resolve(p); };
+        list.appendChild(btn);
+      });
+      document.getElementById('targetOverlay').classList.add('show');
+    });
+  }
+  return Promise.resolve(botChooseActionTarget(drawer, action, valid));
+}
+
+function botChooseActionTarget(bot, action, valid) {
+  const others = valid.filter(p => p.idx !== bot.idx);
+  const targets = others.length > 0 ? others : valid;
+  targets.sort((a, b) => calcRoundScore(b) - calcRoundScore(a));
+  if (action === 'justOneMore' || action === 'flipFour') {
+    targets.sort((a, b) => b.numbers.length - a.numbers.length);
+  }
+  return targets[0];
+}
+
+function pickFromCards(cards, title) {
+  if (cards.length === 0) return Promise.resolve(null);
+  return new Promise(resolve => {
+    pendingResolve = resolve;
+    const overlay = document.getElementById('cardSelectOverlay');
+    document.getElementById('cardSelectTitle').textContent = title;
+    document.getElementById('cardSelectSub').textContent = '点击一张牌';
+    const grid = document.getElementById('cardSelectGrid');
+    grid.innerHTML = '';
+    cards.forEach(c => {
+      const el = renderCard(c, false);
+      el.classList.add('selectable');
+      el.onclick = () => { overlay.classList.remove('show'); pendingResolve = null; resolve(c); };
+      grid.appendChild(el);
+    });
+    document.getElementById('cardSelectActions').innerHTML = '';
+    overlay.classList.add('show');
+  });
+}
+
+function botPickSteal(target) {
+  const all = [...target.numbers, ...target.modifiers];
+  all.sort((a, b) => (b.value || 0) - (a.value || 0));
+  return all[0] || null;
+}
+
+
+/* ===== BOT HIT/STAY AI ===== */
+function botDecideHitOrStay(p) {
+  if (p.hasZero) return 'hit';
+  const n = p.numbers.length;
+  if (n === 0) return 'hit';
+  const score = calcRoundScore(p);
+  const highCards = p.numbers.filter(c => c.value >= 8).length;
+  const bustRisk = highCards / Math.max(1, 14 - n);
+  if (n >= 6) return score >= 30 ? 'stay' : (Math.random() < 0.3 ? 'stay' : 'hit');
+  if (n >= 5) return Math.random() < (0.3 + bustRisk * 0.4) ? 'stay' : 'hit';
+  if (n >= 4) return Math.random() < (0.15 + bustRisk * 0.3) ? 'stay' : 'hit';
+  if (n >= 3 && score >= 25) return Math.random() < 0.2 ? 'stay' : 'hit';
+  return 'hit';
+}
+
+/* ===== INITIAL DEAL ===== */
+async function dealInitialCards() {
+  const order = [];
+  const startCi = (CW_ORDER.indexOf(dealerIdx) + 1) % 4;
+  for (let i = 0; i < 4; i++) order.push(CW_ORDER[(startCi + i) % 4]);
+
+  for (const idx of order) {
+    const p = players[idx];
+    currentTurn = idx;
+    render();
+
+    if (p.isHuman) {
+      document.getElementById('btnFlip').disabled = false;
+      document.getElementById('btnStay').disabled = true;
+      document.getElementById('deckBtn').classList.add('can-flip');
+      await new Promise(r => { p._resolve = r; });
+      disableButtons();
+    } else {
+      await sleep(randBetween(600, 1200));
+    }
+
+    let card = drawCard();
+    if (!card) break;
+    while (card && (card.type === 'action' || card.type === 'modifier')) {
+      log(p.name + ' 发牌阶段翻到 ' + cardLabel(card) + '，立即结算');
+      await sleep(300);
+      const res = await processCard(p, card);
+      if (res && res.flip7) return true;
+      card = drawCard();
+    }
+    if (card && card.type === 'number') {
+      const res = await processCard(p, card);
+      if (res && res.flip7) return true;
+    }
+    await sleep(300);
+    render();
+  }
+  return false;
+}
+
+/* ===== TURN FLOW ===== */
+async function runRound() {
+  const flip7 = await dealInitialCards();
+  if (flip7 || isRoundOver()) { await endRound(); return; }
+
+  const startCi = (CW_ORDER.indexOf(dealerIdx) + 1) % 4;
+
+  while (!isRoundOver() && !gameOver) {
+    let anyActive = false;
+    for (let i = 0; i < 4; i++) {
+      const idx = CW_ORDER[(startCi + i) % 4];
+      const p = players[idx];
+      if (p.status !== 'active' || gameOver) continue;
+      anyActive = true;
+      currentTurn = idx;
+      render();
+
+      let choice;
+      if (p.isHuman) {
+        if (p.hasZero) {
+          log('🌈0效果：你必须继续翻牌！');
+          choice = 'hit';
+          document.getElementById('btnFlip').disabled = false;
+          document.getElementById('btnStay').disabled = true;
+          document.getElementById('deckBtn').classList.add('can-flip');
+          await new Promise(r => { p._resolve = r; });
+          disableButtons();
+        } else {
+          document.getElementById('btnFlip').disabled = false;
+          document.getElementById('btnStay').disabled = false;
+          document.getElementById('deckBtn').classList.add('can-flip');
+          choice = await new Promise(r => { p._resolve = r; });
+          disableButtons();
+        }
+      } else {
+        await sleep(randBetween(800, 1500));
+        choice = botDecideHitOrStay(p);
+      }
+
+      if (p.status !== 'active' || gameOver || isRoundOver()) break;
+
+      if (choice === 'stay') {
+        p.status = 'stayed';
+        log(p.name + ' 选择停牌，保留 ' + calcRoundScore(p) + ' 分');
+        render();
+        continue;
+      }
+
+      const card = drawCard();
+      if (!card) {
+        p.status = 'stayed';
+        log('牌堆已空，' + p.name + ' 被迫停牌');
+        render(); continue;
+      }
+      await sleep(200);
+      const res = await processCard(p, card);
+      if (res && res.flip7) { await endRound(); return; }
+      if (isRoundOver()) { await endRound(); return; }
+    }
+    if (!anyActive) break;
+  }
+  if (!gameOver) await endRound();
+}
+
+function disableButtons() {
+  document.getElementById('btnFlip').disabled = true;
+  document.getElementById('btnStay').disabled = true;
+  document.getElementById('deckBtn').classList.remove('can-flip');
+}
+
+function humanHit() {
+  if (gameOver) return;
+  const p = players[currentTurn];
+  if (!p || !p.isHuman || p.status !== 'active') return;
+  if (p._resolve) { p._resolve('hit'); p._resolve = null; }
+}
+function humanStay() {
+  if (gameOver) return;
+  const p = players[currentTurn];
+  if (!p || !p.isHuman || p.status !== 'active') return;
+  if (p.hasZero) { log('🌈0效果：不能停牌！'); return; }
+  if (p._resolve) { p._resolve('stay'); p._resolve = null; }
+}
+
+/* ===== END ROUND ===== */
+async function endRound() {
+  if (gameOver) return;
+  processing = true; disableButtons();
+
+  players.forEach(p => {
+    if (p.status === 'active') p.status = 'stayed';
+    p.roundScore = calcRoundScore(p);
+    p.totalScore += p.roundScore;
+  });
+  render(); await sleep(300);
+
+  let summary = '第 ' + roundNum + ' 回合结算：';
+  players.forEach(p => { summary += ' ' + p.name + '(+' + p.roundScore + ')'; });
+  log(summary, true);
+
+  showBanner('第 ' + roundNum + ' 回合结束',
+    players.map(p => p.emoji + ' ' + p.name + ': +' + p.roundScore + ' → 总分 ' + p.totalScore).join('\n'));
+  await sleep(2500); hideBanner();
+
+  const overLine = players.filter(p => p.totalScore >= WIN_SCORE);
+  if (overLine.length > 0) {
+    overLine.sort((a, b) => b.totalScore - a.totalScore);
+    endGame(overLine[0]); return;
+  }
+
+  roundNum++;
+  dealerIdx = CW_ORDER[(CW_ORDER.indexOf(dealerIdx) + 1) % 4];
+  resetRoundState();
+  log('—— 第 ' + roundNum + ' 回合开始 ——', true);
+  render(); processing = false;
+  runRound();
+}
+
+/* ===== GAME INIT ===== */
+function initGame() {
+  players = [0,1,2,3].map(makePlayer);
+  roundNum = 1; dealerIdx = 0; gameOver = false; processing = false;
+  resetRoundState();
+  log('Flip7 复仇版开始！先达到 ' + WIN_SCORE + ' 分获胜。翻牌或停牌，小心被偷被换！', true);
+  render();
+  runRound();
+}
+
+/* ===== UI ===== */
+function showBanner(t, txt) { document.getElementById('bannerTitle').textContent = t; document.getElementById('bannerText').textContent = txt; document.getElementById('banner').classList.add('show'); }
+function hideBanner() { document.getElementById('banner').classList.remove('show'); }
+function showFlip7Fx() { const fx = document.getElementById('flip7Fx'); fx.innerHTML = '<div class="flip7-text">🎉 FLIP 7! 🎉</div>'; setTimeout(() => { fx.innerHTML = ''; }, 900); }
+
+function endGame(winner) {
+  gameOver = true; processing = true;
+  const ranked = [...players].sort((a, b) => b.totalScore - a.totalScore);
+  let rewardsHTML = '<div>Flip7 复仇版</div>';
+  if (IS_BATTLE) {
+    const bs = battleSettle(winner.isHuman);
+    if (winner.isHuman) {
+      rewardsHTML = '<div class="reward-positive">❤️ 返还 ' + bs.hpReturn + ' 血量</div><div class="reward-positive">🔮 +' + bs.crystalReward + ' 紫晶</div><div>当前血量: ' + battleState.hp + ' · 紫晶: ' + battleState.crystals + '</div>';
+    } else {
+      rewardsHTML = '<div class="reward-negative">❤️ 失去 ' + bs.totalConsumed + ' 血量</div><div>当前血量: ' + battleState.hp + '</div>';
+    }
+  }
+  const rankHTML = ranked.map((p, i) => '<div class="rank-row' + (i === 0 ? ' winner' : '') + '"><span class="rank-pos">' + (i+1) + '</span><span class="rank-emoji">' + p.emoji + '</span><span class="rank-name">' + p.name + '</span><span class="rank-score">' + p.totalScore + '</span></div>').join('');
+  document.getElementById('endTitle').textContent = winner.isHuman ? '🎉 你赢了！' : '😢 游戏结束';
+  document.getElementById('endRanking').innerHTML = rankHTML;
+  document.getElementById('endRewards').innerHTML = rewardsHTML;
+  document.getElementById('endOverlay').classList.add('show');
+  log(winner.name + ' 达到 ' + WIN_SCORE + ' 分，赢得游戏！', true);
+}
+
+function renderCard(c, faceDown) {
+  const el = document.createElement('div');
+  if (faceDown) { el.className = 'card face-down'; return el; }
+  el.className = 'card';
+  if (c.type === 'number') {
+    if (c.special === 'zero') el.classList.add('color0');
+    else if (c.special === 'unlucky7') el.classList.add('bad7');
+    else if (c.special === 'lucky13') el.classList.add('color13');
+    else el.classList.add('number');
+  } else if (c.type === 'modifier') {
+    el.classList.add('modifier');
+    if (c.op === 'div2') el.classList.add('div2');
+  } else if (c.type === 'action') {
+    el.classList.add('action');
+  }
+  el.textContent = cardLabel(c);
+  return el;
+}
+
+function renderPlayer(p) {
+  const pos = POS_MAP[p.idx];
+  const el = document.getElementById('player' + p.idx);
+  el.className = 'player-area ' + pos + (p.idx === currentTurn && p.status === 'active' ? ' active-player' : '');
+
+  let statusText = '翻牌中', statusCls = 'active-s';
+  if (p.status === 'stayed') { statusText = '已停牌'; statusCls = 'stayed'; }
+  if (p.status === 'busted') { statusText = '爆牌'; statusCls = 'busted'; }
+
+  let cardsHTML = p.numbers.map(c => renderCard(c, false).outerHTML).join('');
+  p.modifiers.forEach(c => { cardsHTML += renderCard(c, false).outerHTML; });
+
+  const isVert = pos === 'left' || pos === 'right';
+  el.innerHTML =
+    '<div class="player-header"><div class="player-avatar">' + p.emoji + '</div><div><div class="player-name">' + p.name + '</div><div class="player-total">总分 ' + p.totalScore + '</div></div><span class="player-status ' + statusCls + '">' + statusText + '</span></div>' +
+    '<div class="player-cards' + (isVert ? ' vertical' : '') + '">' + cardsHTML + '</div>' +
+    (p.status !== 'busted' && (p.numbers.length + p.modifiers.length) > 0 ? '<div class="round-score">本回合 ' + calcRoundScore(p) + '分</div>' : '') +
+    (p.flip7 ? '<div class="round-score" style="color:#ff6f00">Flip7!</div>' : '') +
+    (p.hasZero ? '<div class="round-score" style="color:#e91e63;font-size:9px">🌈0 总分为0</div>' : '');
+}
+
+function render() {
+  players.forEach(renderPlayer);
+  document.getElementById('deckCount').textContent = deck.length + ' 张';
+  document.getElementById('roundInfo').textContent = '第 ' + roundNum + ' 回合 · 目标 ' + WIN_SCORE + ' 分';
+  const top = discard.length > 0 ? discard[discard.length - 1] : null;
+  const dp = document.getElementById('discardPile');
+  if (top) { dp.innerHTML = ''; dp.appendChild(renderCard(top, false)); } else { dp.textContent = '弃牌'; }
+}
+
+document.getElementById('btnFlip').onclick = humanHit;
+document.getElementById('btnStay').onclick = humanStay;
+document.getElementById('deckBtn').onclick = () => {
+  const p = players[currentTurn];
+  if (p && p.isHuman && p.status === 'active') humanHit();
+};
+
+initGame();
+})();
+</script>
+</body>
+</html>

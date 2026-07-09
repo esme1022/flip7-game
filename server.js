@@ -7,6 +7,7 @@ const path=require('path');
 const app=express();
 const server=http.createServer(app);
 const wss=new WebSocketServer({server});
+app.use(express.static(path.join(__dirname)));
 app.use(express.static(path.join(__dirname,'public')));
 
 const WIN=200,BEANS=5000,ANTE=100;

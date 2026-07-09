@@ -1,0 +1,259 @@
+/* ═══ CELLAR THEME OVERRIDE ═══ */
+/* Chocolate-brown palette — no near-black allowed */
+/* Deep chocolate: #3d2010  |  Dark brown: #4a2c14  |  Medium brown: #5a3820 */
+/* Accent copper: #8b5e2a   |  Gold: #c87533 / #d4a338  |  Cream text: #f5e6d0 */
+
+body, html {
+  background: #3d2010 !important;
+}
+
+.device, #device, #game, .game-container {
+  background: linear-gradient(180deg, #4a2c14 0%, #3d2010 50%, #3a1e0e 100%) !important;
+}
+
+/* ─── Headers / topbars ─── */
+.topbar, .header, .game-header, .topbar-title, .header-title, .game-title {
+  color: #d4a338 !important;
+  text-shadow: 0 0 10px rgba(212,163,56,.2);
+}
+
+.round-info, .deck-count, .player-total {
+  color: #c9a87a !important;
+}
+
+/* ─── Mode badge ─── */
+.mode-badge {
+  background: rgba(180,120,40,.25) !important;
+  color: #d4a338 !important;
+  border: 1px solid rgba(180,120,40,.35) !important;
+}
+
+/* ─── Exit / back button ─── */
+.exit-btn {
+  background: rgba(180,120,40,.12) !important;
+  border: 1.5px solid rgba(180,120,40,.3) !important;
+  color: #d4a338 !important;
+  box-shadow: none !important;
+}
+.exit-btn:hover {
+  background: rgba(180,120,40,.25) !important;
+}
+
+/* ─── Primary buttons ─── */
+.btn-primary, .btn-flip, .btn-stay, .btn-stop, .start-btn,
+#btnFlip, #btnStay, #btnStop,
+button[class*="primary"], .btn.btn-primary {
+  background: linear-gradient(135deg, #8b5e2a, #c87533) !important;
+  color: #fff !important;
+  border: none !important;
+  box-shadow: 0 4px 12px rgba(180,120,40,.3) !important;
+}
+
+/* ─── Secondary buttons ─── */
+.btn-secondary, .btn-back, button[class*="secondary"] {
+  background: rgba(180,120,40,.12) !important;
+  border: 1.5px solid rgba(180,120,40,.3) !important;
+  color: #d4a338 !important;
+}
+
+/* ─── Info panels (NOT cards) ─── */
+.player-panel, .info-panel, .game-info, .score-panel {
+  background: rgba(70,38,16,.65) !important;
+  border-color: rgba(139,94,42,.35) !important;
+}
+
+/* ─── Poker card visibility ─── */
+.poker-card.face-up {
+  background: #fff !important;
+  border: 2px solid #a06cd5 !important;
+  opacity: 1 !important;
+}
+.poker-card.face-up.red { color: #c62828 !important; }
+.poker-card.face-up.black { color: #1a1a2e !important; }
+.poker-card .p-rank, .poker-card .p-suit { color: inherit !important; }
+
+/* ─── Overlays (dark scrim) ─── */
+.overlay, .end-overlay, .game-over, .modal-overlay,
+[class*="overlay"], #endOverlay, #gameOverlay {
+  background: rgba(45,20,5,.88) !important;
+  backdrop-filter: blur(4px);
+}
+
+/* ─── Overlay panels / modals (light warm cream) ─── */
+.end-panel, .end-content, .game-over-content, .modal, .modal-content,
+.end-box, .overlay-content, .target-panel {
+  background: linear-gradient(145deg, #f5e6d0, #e8c890) !important;
+  border: 2px solid rgba(180,120,40,.4) !important;
+  color: #4a2810 !important;
+  box-shadow: 0 16px 50px rgba(0,0,0,.35) !important;
+}
+
+/* ─── Round-end banner ─── */
+.banner {
+  background: linear-gradient(145deg, #f5e6d0, #e8c890) !important;
+  border-color: rgba(180,120,40,.4) !important;
+}
+
+/* ─── Text inside panels ─── */
+.player-name, .status-text {
+  color: #c9a456 !important;
+}
+
+/* ─── Log panel ─── */
+.log, .game-log, #log, .log-area {
+  background: rgba(60,30,8,.55) !important;
+  border-color: rgba(139,94,42,.18) !important;
+  color: rgba(210,168,90,.65) !important;
+}
+
+/* ─── Active player highlight ─── */
+.active-player, .current-player, [class*="active-turn"], .highlight {
+  border-color: #d4a338 !important;
+  box-shadow: 0 0 12px rgba(212,163,56,.25) !important;
+  filter: drop-shadow(0 0 8px rgba(212,163,56,.45)) !important;
+}
+
+/* ─── Rank / reward ─── */
+.reward-positive { color: #4caf50 !important; }
+.reward-negative { color: #ef5350 !important; }
+.rank-row.winner {
+  background: rgba(180,120,40,.18) !important;
+  border-color: rgba(212,163,56,.4) !important;
+}
+
+/* ══════════════════════════════════════════
+   BARREL ROULETTE OVERLAY
+══════════════════════════════════════════ */
+.barrel-roulette-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(40,18,5,.92);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 16px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .4s;
+}
+.barrel-roulette-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.br-title {
+  font-size: 20px;
+  font-weight: 900;
+  color: #d4a338;
+  text-shadow: 0 0 15px rgba(212,163,56,.3);
+}
+.br-subtitle {
+  font-size: 12px;
+  color: rgba(200,160,80,.5);
+}
+.br-barrels {
+  display: flex;
+  gap: 12px;
+  margin: 10px 0;
+}
+.br-barrel {
+  width: 56px;
+  height: 72px;
+  border-radius: 6px;
+  position: relative;
+  background: linear-gradient(180deg, #3d2410, #2a1a0a);
+  border: 2px solid #5c3a1e;
+  box-shadow: 0 4px 12px rgba(0,0,0,.4), inset 0 -10px 20px rgba(0,0,0,.3);
+  cursor: pointer;
+  transition: all .2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.br-barrel::before {
+  content: '';
+  position: absolute;
+  top: 14px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #8b5e2a, transparent);
+}
+.br-barrel::after {
+  content: '';
+  position: absolute;
+  bottom: 14px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #8b5e2a, transparent);
+}
+.br-barrel:hover {
+  transform: translateY(-3px);
+  border-color: #d4a338;
+  box-shadow: 0 8px 20px rgba(0,0,0,.4), 0 0 15px rgba(212,163,56,.15);
+}
+.br-barrel.opened { pointer-events: none; cursor: default; }
+.br-barrel.safe {
+  border-color: #4caf50;
+  box-shadow: 0 0 12px rgba(76,175,80,.2);
+}
+.br-barrel.exploded {
+  border-color: #9c27b0;
+  box-shadow: 0 0 12px rgba(156,39,176,.3);
+  animation: brShake .4s ease-in-out;
+}
+@keyframes brShake {
+  0%,100% { transform: translateX(0); }
+  25% { transform: translateX(-4px) rotate(-2deg); }
+  75% { transform: translateX(4px) rotate(2deg); }
+}
+.br-tap {
+  width: 10px;
+  height: 16px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #d4a338, #8b5e2a);
+  box-shadow: 0 2px 4px rgba(0,0,0,.3);
+  z-index: 1;
+}
+.br-result {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  opacity: 0;
+  transition: opacity .3s;
+}
+.br-barrel.opened .br-result { opacity: 1; }
+
+.br-status {
+  font-size: 14px;
+  font-weight: 700;
+  color: #e8c36a;
+  min-height: 24px;
+  text-align: center;
+}
+.br-settle {
+  font-size: 13px;
+  color: rgba(200,160,80,.6);
+  text-align: center;
+}
+.br-done-btn {
+  margin-top: 8px;
+  padding: 8px 28px;
+  border-radius: 20px;
+  border: none;
+  background: linear-gradient(135deg, #8b5e2a, #c87533);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  display: none;
+}
+.br-done-btn.show { display: block; }

@@ -1,0 +1,1465 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>地下酒庄</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;user-select:none}
+html,body{width:100%;height:100%;overflow:hidden;background:#3d2010}
+body{font-family:'Noto Sans SC',system-ui,sans-serif;display:flex;align-items:center;justify-content:center}
+
+.device{
+  width:960px;height:540px;position:relative;overflow:hidden;
+  border-radius:14px;border:2px solid rgba(120,70,20,.3);
+  transform-origin:center center;
+  background:#3d2010;
+}
+
+/* ═══════════════════════════════════════
+   CORRIDOR - Painted perspective
+   ═══════════════════════════════════════ */
+.corridor{
+  position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse 80% 70% at 50% 55%, rgba(100,60,20,.12) 0%, transparent 50%),
+    radial-gradient(ellipse 40% 30% at 50% 48%, rgba(180,120,40,.04) 0%, transparent 50%),
+    linear-gradient(180deg, #1a0e06 0%, #150a04 40%, #120804 100%);
+  overflow:hidden;
+}
+
+/* Floor with stone tiles */
+.floor{
+  position:absolute;bottom:0;left:0;right:0;height:52%;
+  background:
+    repeating-linear-gradient(90deg,
+      rgba(60,40,20,.08) 0px, rgba(60,40,20,.08) 1px, transparent 1px, transparent 60px),
+    repeating-linear-gradient(0deg,
+      rgba(60,40,20,.06) 0px, rgba(60,40,20,.06) 1px, transparent 1px, transparent 40px),
+    linear-gradient(180deg, rgba(20,14,8,.2) 0%, rgba(45,28,14,.45) 50%, rgba(55,35,18,.6) 100%);
+  clip-path:polygon(32% 0%, 68% 0%, 100% 100%, 0% 100%);
+}
+.floor::before{
+  content:'';position:absolute;inset:0;
+  background:
+    repeating-conic-gradient(rgba(50,30,15,.04) 0% 25%, transparent 0% 50%) 0 0 / 40px 40px;
+  mask-image:linear-gradient(180deg, transparent 0%, rgba(0,0,0,.5) 40%, black 100%);
+  -webkit-mask-image:linear-gradient(180deg, transparent 0%, rgba(0,0,0,.5) 40%, black 100%);
+}
+.floor::after{
+  content:'';position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 80%, rgba(180,120,40,.06) 0%, transparent 60%);
+}
+
+/* Ceiling with wooden beams */
+.ceiling{
+  position:absolute;top:0;left:0;right:0;height:44%;
+  background:
+    repeating-linear-gradient(90deg,
+      rgba(40,22,10,.5) 0px, rgba(40,22,10,.5) 4px,
+      transparent 4px, transparent 120px),
+    linear-gradient(0deg, rgba(18,12,6,.15) 0%, rgba(30,18,10,.5) 40%, rgba(35,22,12,.7) 100%);
+  clip-path:polygon(32% 100%, 68% 100%, 100% 0%, 0% 0%);
+}
+.ceiling::before{
+  content:'';position:absolute;inset:0;
+  background:
+    repeating-linear-gradient(0deg,
+      transparent 0px, transparent 78px,
+      rgba(55,32,14,.3) 78px, rgba(55,32,14,.3) 82px,
+      transparent 82px, transparent 160px);
+  mask-image:linear-gradient(0deg, transparent 20%, black 80%);
+  -webkit-mask-image:linear-gradient(0deg, transparent 20%, black 80%);
+}
+
+/* Brick walls (left & right) */
+.wall-left, .wall-right{
+  position:absolute;top:0;bottom:0;width:36%;
+}
+.wall-left{
+  left:0;
+  background:
+    repeating-linear-gradient(0deg,
+      rgba(45,28,14,.5) 0px, rgba(45,28,14,.5) 24px,
+      rgba(30,18,8,.7) 24px, rgba(30,18,8,.7) 26px),
+    repeating-linear-gradient(90deg,
+      rgba(35,20,10,.4) 0px, rgba(35,20,10,.4) 48px,
+      rgba(25,14,6,.6) 48px, rgba(25,14,6,.6) 50px);
+  mask-image:linear-gradient(90deg,rgba(0,0,0,.7) 0%,rgba(0,0,0,.5) 40%,transparent 85%);
+  -webkit-mask-image:linear-gradient(90deg,rgba(0,0,0,.7) 0%,rgba(0,0,0,.5) 40%,transparent 85%);
+}
+.wall-right{
+  right:0;
+  background:
+    repeating-linear-gradient(0deg,
+      rgba(45,28,14,.5) 0px, rgba(45,28,14,.5) 24px,
+      rgba(30,18,8,.7) 24px, rgba(30,18,8,.7) 26px),
+    repeating-linear-gradient(90deg,
+      rgba(35,20,10,.4) 0px, rgba(35,20,10,.4) 48px,
+      rgba(25,14,6,.6) 48px, rgba(25,14,6,.6) 50px);
+  mask-image:linear-gradient(-90deg,rgba(0,0,0,.7) 0%,rgba(0,0,0,.5) 40%,transparent 85%);
+  -webkit-mask-image:linear-gradient(-90deg,rgba(0,0,0,.7) 0%,rgba(0,0,0,.5) 40%,transparent 85%);
+}
+
+/* Wainscoting / dado rail on walls */
+.wall-left::before, .wall-right::before{
+  content:'';position:absolute;top:52%;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,rgba(120,80,30,.4),rgba(120,80,30,.15));
+}
+.wall-right::before{
+  background:linear-gradient(-90deg,rgba(120,80,30,.4),rgba(120,80,30,.15));
+}
+
+/* Vanishing point glow - the distant end of the corridor */
+.vp-glow{
+  position:absolute;top:46%;left:50%;transform:translate(-50%,-50%);
+  width:80px;height:120px;border-radius:40% 40% 0 0;
+  background:radial-gradient(ellipse,rgba(140,90,30,.08) 0%,rgba(100,60,20,.03) 40%,transparent 70%);
+  border:1px solid rgba(100,60,20,.06);
+}
+
+/* Ambient light pools on floor from torches */
+.light-pool{
+  position:absolute;border-radius:50%;
+  background:radial-gradient(ellipse,rgba(255,150,40,.04) 0%,transparent 70%);
+  pointer-events:none;
+}
+
+/* ═══ DOORS ═══ */
+.doors-layer{
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+}
+
+.door-group{
+  position:absolute;
+  display:flex;flex-direction:column;align-items:center;
+  cursor:pointer;
+  transition:transform .3s cubic-bezier(.25,.46,.45,.94), filter .3s;
+}
+.door-group:hover{transform:var(--hover-tf);filter:brightness(1.2)}
+.door-group:hover .door-body{box-shadow:0 0 30px rgba(255,170,50,.12), inset 0 0 20px rgba(0,0,0,.3)}
+.door-group:hover .door-panel-inner{transform:rotateY(-12deg)}
+.door-group:hover .door-glow{opacity:1}
+
+
+.door-body{
+  position:relative;
+  border-radius:8px 8px 0 0;
+  background:linear-gradient(180deg,#4a2c14,#3a2010);
+  border:3px solid #5c3a1e;
+  box-shadow:0 4px 20px rgba(0,0,0,.5), inset 0 0 15px rgba(0,0,0,.4);
+  overflow:hidden;
+  transition:box-shadow .3s;
+}
+
+.door-panel-inner{
+  position:absolute;inset:0;
+  background:
+    repeating-linear-gradient(180deg,
+      rgba(60,36,14,.9) 0px, rgba(48,28,10,.95) 2px,
+      rgba(66,40,16,.85) 2px, rgba(54,32,12,.9) 30px);
+  border-radius:6px 6px 0 0;
+  transform-origin:left center;
+  transition:transform .4s cubic-bezier(.25,.46,.45,.94);
+}
+
+.door-inner-frame{
+  position:absolute;inset:10px;
+  border:1.5px solid rgba(122,79,42,.2);
+  border-radius:3px;
+}
+
+.door-handle{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:6px;height:22px;border-radius:3px;
+  background:linear-gradient(180deg,#e8c36a,#8b5e2a,#d4a338);
+  box-shadow:1px 1px 4px rgba(0,0,0,.5);
+}
+
+.door-studs-tl,.door-studs-tr,.door-studs-bl,.door-studs-br{
+  position:absolute;width:5px;height:5px;border-radius:50%;
+  background:radial-gradient(circle,#d4a338 30%,#6b4420 100%);
+  box-shadow:0 1px 2px rgba(0,0,0,.4);
+}
+.door-studs-tl{top:8px;left:8px}
+.door-studs-tr{top:8px;right:8px}
+.door-studs-bl{bottom:8px;left:8px}
+.door-studs-br{bottom:8px;right:8px}
+
+.door-icon{
+  position:absolute;top:35%;left:50%;transform:translate(-50%,-50%);
+  z-index:2;pointer-events:none;
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,.5));
+}
+
+.door-name{
+  position:absolute;bottom:18%;left:50%;transform:translateX(-50%);
+  font-weight:900;color:#d4a338;white-space:nowrap;
+  text-shadow:0 1px 3px rgba(0,0,0,.7), 0 0 8px rgba(180,120,40,.2);
+  z-index:2;pointer-events:none;
+  letter-spacing:.5px;
+}
+
+.door-glow{
+  position:absolute;bottom:-3px;left:10%;right:10%;height:12px;
+  background:radial-gradient(ellipse at 50% 0%, rgba(255,170,50,.4) 0%, transparent 70%);
+  filter:blur(3px);opacity:.5;transition:opacity .3s;
+}
+
+.door-light-under{
+  position:absolute;bottom:0;left:5%;right:5%;height:3px;
+  background:linear-gradient(90deg,transparent,rgba(255,180,60,.5),rgba(255,200,80,.7),rgba(255,180,60,.5),transparent);
+  filter:blur(1px);
+}
+
+/* ═══ TORCHES ═══ */
+.torch{position:absolute;display:flex;flex-direction:column;align-items:center}
+.torch-flame{
+  width:7px;height:12px;
+  border-radius:50% 50% 50% 50% / 60% 60% 40% 40%;
+  background:radial-gradient(ellipse,#fff4c0 10%,#ffe060 30%,#ff8c20 70%);
+  box-shadow:0 0 8px 3px rgba(255,160,40,.5), 0 0 24px 8px rgba(255,120,20,.15), 0 -3px 6px 2px rgba(255,200,80,.3);
+  animation:flicker 1.8s ease-in-out infinite alternate;
+}
+.torch-bracket{
+  width:5px;height:14px;margin-top:-1px;
+  background:linear-gradient(180deg,#6b4420,#3d2410);
+  border-radius:0 0 2px 2px;
+  box-shadow:0 1px 2px rgba(0,0,0,.4);
+}
+.torch-glow{
+  position:absolute;top:-10px;left:50%;transform:translateX(-50%);
+  width:100px;height:100px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,150,40,.1) 0%,rgba(255,120,30,.04) 40%,transparent 70%);
+  pointer-events:none;
+}
+@keyframes flicker{
+  0%{transform:scaleY(1) scaleX(1);opacity:.85}
+  30%{transform:scaleY(1.12) scaleX(.88);opacity:1}
+  60%{transform:scaleY(.86) scaleX(1.1);opacity:.7}
+  100%{transform:scaleY(1.05) scaleX(.95);opacity:.92}
+}
+
+/* Dust */
+.dust{
+  position:absolute;width:2px;height:2px;border-radius:50%;
+  background:rgba(200,150,60,.2);pointer-events:none;
+  animation:dustFloat var(--dur) ease-in-out infinite;
+  animation-delay:var(--del);
+}
+@keyframes dustFloat{
+  0%,100%{transform:translate(0,0);opacity:.1}
+  50%{transform:translate(var(--dx),var(--dy));opacity:.35}
+}
+
+/* ═══ HUD ═══ */
+.hud{
+  position:absolute;top:0;left:0;right:0;height:44px;z-index:50;
+  display:flex;align-items:center;padding:0 14px;
+  background:linear-gradient(180deg,rgba(40,20,8,.85) 0%,rgba(40,20,8,.3) 70%,transparent 100%);
+}
+.hud-left{display:flex;align-items:center;gap:7px}
+.hud-avatar{
+  width:30px;height:30px;border-radius:50%;
+  border:2px solid #5c3a1e;background:rgba(20,12,5,.7);
+  display:flex;align-items:center;justify-content:center;font-size:15px;
+  cursor:pointer;transition:border-color .15s;
+}
+.hud-avatar:hover{border-color:#d4a338}
+.hud-name{font-size:11px;font-weight:700;color:#b89040;cursor:pointer}
+.hud-rank{
+  font-size:9px;font-weight:700;color:#d4a338;
+  background:rgba(180,120,40,.06);border:1px solid rgba(180,120,40,.12);
+  border-radius:9px;padding:2px 7px;cursor:pointer;
+}
+.hud-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.hud-coins{display:flex;align-items:center;gap:3px;font-size:10px;font-weight:700;color:#e8c36a}
+.hud-btn{
+  width:26px;height:26px;border-radius:50%;
+  background:rgba(180,120,40,.05);border:1px solid rgba(180,120,40,.1);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;cursor:pointer;transition:all .15s;
+}
+.hud-btn:hover{background:rgba(180,120,40,.12);border-color:rgba(180,120,40,.25)}
+
+.hud-bottom{
+  position:absolute;bottom:0;left:0;right:0;height:38px;z-index:50;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  background:linear-gradient(0deg,rgba(40,20,8,.85) 0%,rgba(40,20,8,.3) 70%,transparent 100%);
+}
+.hud-bb{
+  display:flex;align-items:center;gap:4px;
+  padding:4px 11px;border-radius:6px;
+  background:rgba(180,120,40,.04);border:1px solid rgba(180,120,40,.08);
+  font-size:9px;font-weight:700;color:rgba(200,160,80,.4);
+  cursor:pointer;transition:all .15s;
+}
+.hud-bb:hover{background:rgba(180,120,40,.1);color:#d4a338;border-color:rgba(180,120,40,.2)}
+.stars-row{display:flex;gap:1px}
+.star{font-size:9px;opacity:.25}
+.star.filled{opacity:1}
+
+/* ═══ ROOM SCREEN ═══ */
+.room-screen{
+  position:absolute;inset:0;z-index:60;
+  background:
+    radial-gradient(ellipse 50% 45% at 50% 42%, rgba(50,30,12,.08) 0%, transparent 60%),
+    linear-gradient(180deg, #3d2010 0%, #3a1e0e 50%, #382010 100%);
+  opacity:0;pointer-events:none;
+  transition:opacity .35s,transform .35s;
+  transform:scale(1.06);
+}
+.room-screen.show{opacity:1;pointer-events:auto;transform:scale(1)}
+
+.room-topbar{
+  position:absolute;top:0;left:0;right:0;height:44px;
+  display:flex;align-items:center;padding:0 14px;
+  background:linear-gradient(180deg,rgba(40,20,8,.6),transparent);
+}
+.room-back{
+  width:28px;height:28px;border-radius:50%;
+  background:rgba(180,120,40,.06);border:1px solid rgba(180,120,40,.12);
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;color:#d4a338;cursor:pointer;transition:all .15s;
+}
+.room-back:hover{background:rgba(180,120,40,.15)}
+.room-title{margin-left:10px;font-size:13px;font-weight:900;color:#d4a338}
+
+.table-area{
+  position:absolute;top:70px;left:50%;transform:translateX(-50%);
+  width:420px;height:260px;
+}
+.table-oval{
+  width:100%;height:100%;border-radius:50%;
+  border:2px solid rgba(139,94,42,.2);
+  background:rgba(20,12,5,.4);
+  backdrop-filter:blur(2px);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:11px;
+  box-shadow:inset 0 2px 20px rgba(0,0,0,.3), 0 0 25px rgba(140,90,30,.03);
+}
+.table-game-label{font-size:14px;font-weight:900;color:#d4a338}
+.table-select{
+  padding:6px 26px 6px 12px;border-radius:6px;
+  border:1.5px solid rgba(139,94,42,.3);
+  background:rgba(15,8,4,.7);
+  font-size:12px;font-weight:700;color:#e8c36a;
+  font-family:inherit;cursor:pointer;appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23d4a338' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 8px center;
+}
+.table-select:focus{outline:1.5px solid #d4a338;outline-offset:1px}
+.start-btn{
+  margin-top:3px;
+  background:linear-gradient(135deg,#8b5e2a,#c87533);
+  color:#fff;font-size:12px;font-weight:800;
+  padding:8px 32px;border-radius:22px;border:none;
+  cursor:pointer;font-family:inherit;
+  box-shadow:0 3px 12px rgba(180,120,40,.2);
+  transition:transform .15s,box-shadow .15s;
+}
+.start-btn:hover{transform:scale(1.04);box-shadow:0 5px 18px rgba(180,120,40,.3)}
+.start-btn:active{transform:scale(.96)}
+
+.seat{position:absolute;display:flex;flex-direction:column;align-items:center;gap:2px}
+.seat-circle{
+  width:42px;height:42px;border-radius:50%;
+  border:1.5px dashed rgba(139,94,42,.2);
+  background:rgba(20,12,5,.25);
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;color:rgba(180,120,40,.3);transition:all .15s;
+}
+.seat-label{font-size:8px;color:rgba(200,160,80,.3)}
+.seat.occupied .seat-circle{border:2px solid #5c3a1e;border-style:solid;background:rgba(20,12,5,.4);font-size:18px}
+.seat.matching .seat-circle{
+  border:1.5px solid rgba(180,120,40,.15);border-style:solid;
+  font-size:10px;color:rgba(180,120,40,.25);
+  animation:mp 2s ease-in-out infinite;
+}
+@keyframes mp{0%,100%{box-shadow:0 0 0 0 rgba(180,120,40,.1)}50%{box-shadow:0 0 0 4px rgba(180,120,40,0)}}
+.seat-top{top:12px;left:50%;transform:translateX(-50%)}
+.seat-right{right:22px;top:50%;transform:translateY(-50%)}
+.seat-bottom{bottom:12px;left:50%;transform:translateX(-50%)}
+.seat-left{left:22px;top:50%;transform:translateY(-50%)}
+
+/* ═══ SHOP ═══ */
+.shop-screen{
+  position:absolute;inset:0;z-index:60;
+  background:
+    radial-gradient(ellipse 50% 45% at 50% 40%, rgba(50,30,12,.06) 0%, transparent 60%),
+    linear-gradient(180deg, #3d2010 0%, #382010 100%);
+  opacity:0;pointer-events:none;
+  transition:opacity .4s,transform .4s;
+  transform:translateX(40px);
+}
+.shop-screen.show{opacity:1;pointer-events:auto;transform:translateX(0)}
+
+.shop-topbar{
+  height:44px;display:flex;align-items:center;padding:0 14px;
+  background:linear-gradient(180deg,rgba(40,20,8,.6),transparent);
+}
+.shop-back{
+  width:28px;height:28px;border-radius:50%;
+  background:rgba(180,120,40,.06);border:1px solid rgba(180,120,40,.12);
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;color:#d4a338;cursor:pointer;transition:all .15s;
+}
+.shop-back:hover{background:rgba(180,120,40,.15)}
+.shop-title{margin-left:10px;font-size:13px;font-weight:900;color:#d4a338;flex:1}
+.shop-bal{font-size:10px;font-weight:700;color:#e8c36a}
+
+/* Wardrobe Layout */
+.wardrobe{
+  flex:1;display:flex;align-items:center;justify-content:center;padding:12px;
+}
+.wardrobe-frame{
+  width:100%;max-width:520px;aspect-ratio:5/3;
+  border:3px solid rgba(139,94,42,.4);border-radius:12px;
+  background:linear-gradient(180deg,rgba(40,20,8,.6),rgba(20,10,4,.8));
+  box-shadow:inset 0 0 30px rgba(0,0,0,.5),0 4px 20px rgba(0,0,0,.4);
+  display:grid;
+  grid-template-columns:1fr 1.4fr 1.4fr 1fr;
+  grid-template-rows:1fr 1fr;
+  gap:8px;padding:14px;
+  position:relative;
+}
+.wardrobe-frame::before{
+  content:'';position:absolute;inset:4px;border:1px solid rgba(139,94,42,.15);
+  border-radius:9px;pointer-events:none;
+}
+.wardrobe-slot{
+  border-radius:8px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:4px;
+  background:rgba(80,50,20,.15);border:1.5px solid rgba(139,94,42,.2);
+  cursor:pointer;transition:all .2s;position:relative;overflow:hidden;
+}
+.wardrobe-slot:hover{background:rgba(180,120,40,.12);border-color:rgba(212,163,56,.4);transform:scale(1.03)}
+.wardrobe-slot.slot-tall{grid-row:span 2}
+.wardrobe-slot .slot-icon{font-size:32px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.4))}
+.wardrobe-slot .slot-label{font-size:9px;font-weight:700;color:#d4a338;text-align:center}
+.wardrobe-slot .slot-item-name{font-size:8px;color:rgba(200,160,80,.6);text-align:center;max-width:90%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wardrobe-slot .slot-lvl{font-size:8px;color:#7ecf7e}
+.wardrobe-slot::after{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at center,rgba(212,163,56,.04),transparent 70%);
+  pointer-events:none;
+}
+
+/* Slot Detail Panel */
+.slot-detail{
+  position:absolute;inset:0;z-index:80;
+  background:rgba(40,20,8,.96);backdrop-filter:blur(4px);
+  display:flex;flex-direction:column;
+  opacity:0;pointer-events:none;transition:all .25s;
+}
+.slot-detail.show{opacity:1;pointer-events:auto}
+.slot-detail-head{
+  height:42px;display:flex;align-items:center;padding:0 14px;
+  border-bottom:1px solid rgba(139,94,42,.12);
+}
+.slot-detail-back{font-size:14px;color:#d4a338;cursor:pointer;margin-right:10px}
+.slot-detail-title{font-size:12px;font-weight:700;color:#d4a338;flex:1}
+.slot-detail-bal{font-size:9px;color:#e8c36a}
+.slot-detail-grid{
+  flex:1;overflow-y:auto;padding:12px;
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px;
+}
+.shop-item{
+  border-radius:8px;padding:10px 6px;text-align:center;
+  background:rgba(180,120,40,.04);border:1px solid rgba(139,94,42,.08);
+  cursor:pointer;transition:all .18s;position:relative;
+}
+.shop-item:hover{background:rgba(180,120,40,.09);border-color:rgba(139,94,42,.2);transform:translateY(-2px)}
+.shop-item.equipped{border-color:#d4a338;box-shadow:0 0 8px rgba(212,163,56,.3)}
+.shop-item-icon{font-size:26px;margin-bottom:3px}
+.shop-item-name{font-size:9px;font-weight:700;color:#b89040;margin-bottom:3px}
+.shop-item-price{font-size:9px;margin-top:3px}
+.shop-item .item-free{color:rgba(200,160,80,.4)}
+.shop-item .item-buy{color:#e8c060;font-weight:700}
+.shop-item .item-upgrade{color:#7ecf7e;font-weight:700;cursor:pointer}
+.shop-item .item-max{color:#c084fc;font-weight:700}
+.item-lvl{font-size:8px;color:#d4a338;display:flex;align-items:center;gap:3px;justify-content:center;margin-top:2px}
+.lvl-bar{width:40px;height:4px;background:rgba(100,80,40,.3);border-radius:3px;overflow:hidden}
+.lvl-fill{height:100%;background:linear-gradient(90deg,#d4a338,#f0d060);border-radius:3px;transition:width .3s}
+.equip-btn{margin-top:4px;font-size:8px;padding:2px 7px;border-radius:4px;background:rgba(212,163,56,.15);color:#d4a338;border:1px solid rgba(212,163,56,.3);cursor:pointer;display:inline-block}
+.equip-btn:hover{background:rgba(212,163,56,.3)}
+.equipped-tag{margin-top:4px;font-size:8px;color:#7ecf7e;font-weight:700}
+.shop-item.owned{opacity:1}
+
+/* ═══ RANK OVERLAY ═══ */
+.overlay{
+  position:absolute;inset:0;z-index:90;
+  background:rgba(45,20,5,.88);backdrop-filter:blur(3px);
+  opacity:0;pointer-events:none;transition:opacity .25s;
+}
+.overlay.show{opacity:1;pointer-events:auto}
+.panel{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:400px;max-height:360px;border-radius:10px;overflow:hidden;
+  background:linear-gradient(160deg,#5a3418,#3d2010);
+  border:1.5px solid rgba(139,94,42,.2);
+  box-shadow:0 12px 35px rgba(0,0,0,.6);
+  display:flex;flex-direction:column;
+}
+.panel-head{
+  padding:10px 14px;display:flex;align-items:center;gap:8px;
+  border-bottom:1px solid rgba(139,94,42,.08);
+}
+.panel-title{font-size:13px;font-weight:900;color:#d4a338;flex:1}
+.panel-close{
+  width:24px;height:24px;border-radius:50%;
+  background:rgba(180,120,40,.06);border:1px solid rgba(180,120,40,.1);
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;color:#b89040;cursor:pointer;
+}
+.panel-close:hover{background:rgba(180,120,40,.12)}
+.panel-body{flex:1;overflow-y:auto;padding:8px 10px}
+
+/* Leaderboard */
+.lb-header{display:flex;align-items:center;padding:6px 8px;border-bottom:1px solid rgba(139,94,42,.15);font-size:9px;font-weight:700;color:rgba(200,160,80,.5)}
+.lb-row{display:flex;align-items:center;padding:5px 8px;border-radius:4px;margin-bottom:2px;background:rgba(180,120,40,.015);border:1px solid rgba(139,94,42,.03);transition:background .15s}
+.lb-row:hover{background:rgba(180,120,40,.05)}
+.lb-row.lb-top3{background:rgba(212,163,56,.06);border-color:rgba(212,163,56,.15)}
+.lb-me{display:flex;align-items:center;padding:6px 8px;margin-top:6px;border-radius:5px;background:rgba(100,200,100,.06);border:1px solid rgba(100,200,100,.2);position:sticky;bottom:0}
+.lb-col-rank{width:32px;font-size:12px;text-align:center;font-weight:700;color:#d4a338}
+.lb-col-name{flex:1;font-size:10px;font-weight:600;color:#c8a050;display:flex;align-items:center;gap:4px}
+.lb-emoji{font-size:14px}
+.lb-col-tier{width:130px;font-size:9px;color:#b89040;text-align:center}
+.lb-col-stars{width:50px;font-size:9px;color:#e8c060;text-align:right;font-weight:700}
+
+/* Diamond HUD */
+.hud-diamonds{font-size:10px;font-weight:700;color:#7ec8e3;cursor:pointer;padding:2px 6px;border-radius:10px;background:rgba(100,180,220,.08);border:1px solid rgba(100,180,220,.15);transition:all .15s}
+.hud-diamonds:hover{background:rgba(100,180,220,.15)}
+
+/* Recharge Grid */
+.recharge-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:10px}
+.recharge-item{
+  border-radius:8px;padding:14px 8px;text-align:center;cursor:pointer;
+  background:rgba(100,180,220,.05);border:1.5px solid rgba(100,180,220,.15);
+  transition:all .18s;
+}
+.recharge-item:hover{background:rgba(100,180,220,.12);border-color:rgba(100,180,220,.35);transform:translateY(-2px)}
+.recharge-item .ri-amount{font-size:18px;font-weight:900;color:#7ec8e3}
+.recharge-item .ri-price{font-size:10px;color:rgba(200,200,220,.5);margin-top:4px}
+.recharge-item .ri-bonus{font-size:9px;color:#f0c060;margin-top:2px}
+
+/* Mall */
+.mall-tabs{display:flex;gap:0;padding:0 14px;border-bottom:1px solid rgba(139,94,42,.08)}
+.mall-tab{padding:7px 11px;font-size:9px;font-weight:700;color:rgba(200,160,80,.3);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s}
+.mall-tab.active{color:#d4a338;border-color:#d4a338}
+.mall-body{flex:1;overflow-y:auto;padding:10px 14px}
+.mall-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px}
+.mall-item{
+  border-radius:8px;padding:10px 6px;text-align:center;
+  background:rgba(180,120,40,.04);border:1px solid rgba(139,94,42,.08);
+  cursor:pointer;transition:all .18s;
+}
+.mall-item:hover{background:rgba(180,120,40,.09);border-color:rgba(139,94,42,.2);transform:translateY(-2px)}
+.mall-item .mi-icon{font-size:28px;margin-bottom:4px}
+.mall-item .mi-name{font-size:9px;font-weight:700;color:#b89040;margin-bottom:3px}
+.mall-item .mi-price{font-size:9px;font-weight:700;color:#7ec8e3}
+.mall-item.owned{opacity:.5;pointer-events:none}
+.mall-gacha-btn{
+  margin:12px auto;display:block;padding:10px 24px;border-radius:20px;border:none;
+  background:linear-gradient(135deg,#8b5e2a,#c87533);color:#fff;font-size:12px;font-weight:700;
+  cursor:pointer;font-family:inherit;box-shadow:0 4px 12px rgba(180,120,40,.3);
+}
+.mall-gacha-btn:hover{transform:scale(1.03)}
+
+/* Gacha */
+.gacha-content{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px}
+.gacha-section{background:rgba(180,120,40,.04);border:1px solid rgba(139,94,42,.08);border-radius:8px;padding:12px}
+.gacha-section h3{font-size:11px;color:#d4a338;margin-bottom:8px}
+.gacha-buy-row{display:flex;gap:8px;flex-wrap:wrap}
+.gacha-buy-btn{padding:6px 12px;border-radius:6px;border:1px solid rgba(100,180,220,.3);background:rgba(100,180,220,.08);color:#7ec8e3;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit}
+.gacha-buy-btn:hover{background:rgba(100,180,220,.15)}
+.gacha-draw-btn{padding:8px 18px;border-radius:8px;border:none;background:linear-gradient(135deg,#c87533,#f0a050);color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit}
+.gacha-draw-btn:hover{transform:scale(1.03)}
+.gacha-result{min-height:60px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#e8c36a;font-weight:700}
+.gacha-exchange-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px}
+.gacha-ex-item{border-radius:6px;padding:8px;text-align:center;background:rgba(180,120,40,.06);border:1px solid rgba(139,94,42,.1);cursor:pointer;transition:all .15s}
+.gacha-ex-item:hover{border-color:#d4a338}
+.gacha-ex-item .ex-icon{font-size:22px}
+.gacha-ex-item .ex-name{font-size:8px;color:#b89040;margin-top:2px}
+.gacha-ex-item .ex-cost{font-size:8px;color:#7ecf7e;font-weight:700}
+
+/* Toast */
+.toast{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(.85);
+  z-index:999;background:rgba(20,12,5,.94);color:#e8c36a;
+  padding:10px 22px;border-radius:7px;border:1px solid rgba(180,120,40,.2);
+  font-size:11px;font-weight:700;text-align:center;
+  opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;
+  box-shadow:0 6px 20px rgba(0,0,0,.5);
+}
+.toast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(180,120,40,.12);border-radius:2px}
+
+</style>
+</head>
+<body>
+
+<div class="device" id="app">
+
+  <!-- ═══ CORRIDOR ═══ -->
+  <div class="corridor" id="corridorView">
+    <div class="floor"></div>
+    <div class="ceiling"></div>
+    <div class="wall-left"></div>
+    <div class="wall-right"></div>
+    <div class="vp-glow"></div>
+
+    <!-- Doors layer -->
+    <div class="doors-layer" id="doorsLayer"></div>
+
+    <!-- Torches -->
+    <div id="torchLayer"></div>
+
+    <!-- Dust -->
+    <div id="dustLayer"></div>
+
+    <!-- Noise texture overlay for grittiness -->
+    <div style="position:absolute;inset:0;pointer-events:none;opacity:.03;background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%224%22 height=%224%22%3E%3Crect width=%224%22 height=%224%22 fill=%22%23000%22/%3E%3Crect x=%220%22 y=%220%22 width=%221%22 height=%221%22 fill=%22%23fff%22/%3E%3Crect x=%222%22 y=%222%22 width=%221%22 height=%221%22 fill=%22%23fff%22/%3E%3C/svg%3E');"></div>
+
+    <!-- Vignette -->
+    <div style="position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 75% 70% at 50% 50%,transparent 40%,rgba(5,3,2,.6) 100%)"></div>
+
+    <!-- HUD top -->
+    <div class="hud">
+      <div class="hud-left">
+        <div class="hud-avatar" id="hudAvatar" onclick="changeName()">🦊</div>
+        <span class="hud-name" id="hudName" onclick="changeName()">访客</span>
+        <span class="hud-rank" id="hudRank" onclick="openRank()">酒窖学徒 I</span>
+      </div>
+      <div class="hud-right">
+        <div class="hud-coins">🍇 <span id="hudCoins">0</span></div>
+        <div class="hud-diamonds" onclick="openRecharge()">💎 <span id="hudDiamonds">0</span></div>
+        <div class="hud-btn" onclick="openMall()" title="商城">🛒</div>
+        <div class="hud-btn" onclick="openShop()" title="陈列柜">🗄</div>
+      </div>
+    </div>
+
+    <!-- HUD bottom -->
+    <div class="hud-bottom">
+      <div class="hud-bb" onclick="openShop()">🗄 陈列柜</div>
+      <div class="hud-bb" onclick="openRank()">🏆 排行榜</div>
+      <div class="stars-row" id="starsRow"></div>
+    </div>
+  </div>
+
+  <!-- ═══ ROOM SCREEN ═══ -->
+  <div class="room-screen" id="roomScreen">
+    <div class="room-topbar">
+      <div class="room-back" onclick="closeRoom()">←</div>
+      <div class="room-title" id="roomTitle">Flip7</div>
+    </div>
+    <div class="table-area">
+      <div class="table-oval">
+        <div class="table-game-label" id="tableLabel">Flip7</div>
+        <select class="table-select" id="gameSelect"></select>
+        <button class="start-btn" onclick="startGame()">开始游戏</button>
+      </div>
+      <div class="seat seat-top occupied" id="seat0">
+        <div class="seat-circle" id="seatIcon0">🦊</div>
+        <div class="seat-label">我</div>
+      </div>
+      <div class="seat seat-right matching"><div class="seat-circle">⟳</div><div class="seat-label">匹配中</div></div>
+      <div class="seat seat-bottom matching"><div class="seat-circle">⟳</div><div class="seat-label">匹配中</div></div>
+      <div class="seat seat-left matching"><div class="seat-circle">⟳</div><div class="seat-label">匹配中</div></div>
+    </div>
+  </div>
+
+  <!-- ═══ SHOP SCREEN (衣橱) ═══ -->
+  <div class="shop-screen" id="shopScreen" style="display:flex;flex-direction:column">
+    <div class="shop-topbar">
+      <div class="shop-back" onclick="closeShop()">←</div>
+      <div class="shop-title">🗄 酒庄陈列柜</div>
+      <div class="shop-bal">🍇 <span id="shopBal">0</span> 葡萄币</div>
+    </div>
+    <div class="wardrobe">
+      <div class="wardrobe-frame" id="wardrobeFrame"></div>
+    </div>
+    <!-- Slot detail panel (slides over) -->
+    <div class="slot-detail" id="slotDetail">
+      <div class="slot-detail-head">
+        <div class="slot-detail-back" onclick="closeSlotDetail()">←</div>
+        <div class="slot-detail-title" id="slotDetailTitle">衣服</div>
+        <div class="slot-detail-bal">🍇 <span id="slotDetailBal">0</span></div>
+      </div>
+      <div class="slot-detail-grid" id="slotDetailGrid"></div>
+    </div>
+  </div>
+
+  <!-- ═══ LEADERBOARD OVERLAY ═══ -->
+  <div class="overlay" id="rankOverlay">
+    <div class="panel" style="width:480px;max-height:420px">
+      <div class="panel-head">
+        <div class="panel-title">🏆 全国排行榜 TOP 100</div>
+        <div class="panel-close" onclick="closeRank()">✕</div>
+      </div>
+      <div class="panel-body" id="rankBody"></div>
+    </div>
+  </div>
+
+  <!-- ═══ RECHARGE OVERLAY ═══ -->
+  <div class="overlay" id="rechargeOverlay">
+    <div class="panel" style="width:360px;max-height:400px">
+      <div class="panel-head">
+        <div class="panel-title">💎 钻石充值</div>
+        <div class="panel-close" onclick="closeRecharge()">✕</div>
+      </div>
+      <div class="panel-body" id="rechargeBody">
+        <div class="recharge-grid" id="rechargeGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ MALL SCREEN ═══ -->
+  <div class="shop-screen" id="mallScreen" style="display:flex;flex-direction:column">
+    <div class="shop-topbar">
+      <div class="shop-back" onclick="closeMall()">←</div>
+      <div class="shop-title">🛒 酒庄商城</div>
+      <div class="shop-bal">💎 <span id="mallDiamonds">0</span></div>
+    </div>
+    <div class="mall-tabs" id="mallTabs"></div>
+    <div class="mall-body" id="mallBody"></div>
+    <!-- Gacha sub-panel -->
+    <div class="slot-detail" id="gachaPanel">
+      <div class="slot-detail-head">
+        <div class="slot-detail-back" onclick="closeGacha()">←</div>
+        <div class="slot-detail-title">🎰 酒庄祈愿</div>
+        <div class="slot-detail-bal">🪙 <span id="gachaWishCoins">0</span> 祈愿币 | 🔄 <span id="gachaExCoins">0</span> 兑换币</div>
+      </div>
+      <div class="gacha-content" id="gachaContent"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+const GAMES = [
+  {id:'flip7',name:'Flip7',icon:'🃏',variants:['Flip7 经典','Flip7 狂暴'],routes:['flip7-classic','flip7-berserk']},
+  {id:'uno',name:'UNO',icon:'🎴',variants:['Uno 经典'],routes:['uno-classic']},
+  {id:'liars-bar',name:'大话牌',icon:'🎭',variants:['大话牌'],routes:['liars-bar']},
+  {id:'liars-dice',name:'大话骰',icon:'🎲',variants:['大话骰'],routes:['liars-dice']},
+  {id:'texas',name:'经典扑克',icon:'🤠',variants:['经典扑克'],routes:['liars-bar-texas']},
+];
+
+const RANKS = [
+  {name:'迷途羔羊',icon:'🐑',subs:3,stars:5,protect:true},
+  {name:'暗巷常客',icon:'🌑',subs:3,stars:5,protect:true},
+  {name:'茶会侍从',icon:'🫖',subs:3,stars:5,protect:true},
+  {name:'茶会末席',icon:'🍵',subs:3,stars:5,protect:false},
+  {name:'黑桃骑士',icon:'♠',subs:3,stars:5,protect:false},
+  {name:'地下政官',icon:'🏛',subs:3,stars:5,protect:false},
+  {name:'红桃新贵',icon:'♥',subs:3,stars:5,protect:false},
+  {name:'宫廷弄臣',icon:'🃏',subs:3,stars:5,protect:false},
+  {name:'暗夜领主',icon:'🦇',subs:3,stars:5,protect:false},
+  {name:'无冕之王',icon:'👑',subs:3,stars:5,protect:false},
+  {name:'永夜之主',icon:'🏆',subs:3,stars:5,protect:false},
+];
+
+const LEADERBOARD = generateLeaderboard();
+
+const SHOP_DATA = {
+  lolita:[
+    {id:'loli_basic',icon:'👗',name:'学院洛丽塔',price:0},
+    {id:'loli_rose',icon:'🌹',name:'玫瑰洛丽塔',price:1200},
+    {id:'loli_night',icon:'🌙',name:'月夜洛丽塔',price:2500},
+    {id:'loli_queen',icon:'👸',name:'女王洛丽塔',price:4000},
+    {id:'loli_phantom',icon:'🦋',name:'幻蝶洛丽塔',price:6000},
+  ],
+  robe:[
+    {id:'robe_basic',icon:'🧥',name:'粗布长袍',price:0},
+    {id:'robe_wine',icon:'🍷',name:'酒红长袍',price:1000},
+    {id:'robe_starry',icon:'🌌',name:'星空长袍',price:2200},
+    {id:'robe_gold',icon:'✨',name:'金丝长袍',price:3800},
+    {id:'robe_dragon',icon:'🐉',name:'龙纹长袍',price:5500},
+  ],
+  hat:[
+    {id:'nohat',icon:'🚫',name:'无帽',price:0},
+    {id:'cap',icon:'🧢',name:'鸭舌帽',price:600},
+    {id:'leather',icon:'🎩',name:'皮质礼帽',price:1200},
+    {id:'beret',icon:'👒',name:'金边贝雷帽',price:2500},
+    {id:'crown',icon:'👑',name:'酒神桂冠',price:4500},
+  ],
+  jewelry:[
+    {id:'nojewel',icon:'🚫',name:'无首饰',price:0},
+    {id:'wood_bead',icon:'📿',name:'木珠手链',price:500},
+    {id:'silver',icon:'⛓',name:'银链手链',price:1000},
+    {id:'ruby',icon:'💎',name:'红宝石吊坠',price:2200},
+    {id:'snake',icon:'🐍',name:'金蛇臂环',price:4000},
+  ],
+  table:[
+    {id:'pine',icon:'🪵',name:'松木桌',price:0},
+    {id:'stone',icon:'🪨',name:'石板桌',price:1000},
+    {id:'oak',icon:'🌳',name:'橡木圆桌',price:2000},
+    {id:'ebony',icon:'🖤',name:'黑檀雕花桌',price:3500},
+    {id:'gold_table',icon:'👑',name:'黄金酒神桌',price:6000},
+  ],
+  cardface:[
+    {id:'classic',icon:'🃏',name:'经典牌面',price:0},
+    {id:'woodgrain',icon:'🪵',name:'木纹牌面',price:700},
+    {id:'vine',icon:'🍇',name:'葡萄藤牌面',price:1400},
+    {id:'starry',icon:'🌌',name:'星空牌面',price:2800},
+    {id:'gold_card',icon:'💫',name:'金箔动态牌面',price:5000},
+  ],
+};
+
+const UPGRADE_COSTS = [100,150,200,300,400,500,650,800,1000];
+
+const WARDROBE_SLOTS = [
+  {key:'hat',     label:'帽子', icon:'🎩', col:'1/2', row:'1/2'},
+  {key:'lolita',  label:'洛丽塔',icon:'👗', col:'2/3', row:'1/3', tall:true},
+  {key:'robe',    label:'长袍', icon:'🧥', col:'3/4', row:'1/3', tall:true},
+  {key:'jewelry', label:'首饰', icon:'💎', col:'4/5', row:'1/2'},
+  {key:'table',   label:'牌桌', icon:'🪑', col:'1/2', row:'2/3'},
+  {key:'cardface',label:'牌面', icon:'🃏', col:'4/5', row:'2/3'},
+];
+
+/* ═══ STATE ═══ */
+let player = JSON.parse(localStorage.getItem('cellar_player')||'null') || {
+  nickname:null,avatar:'🦊',coins:0,diamonds:0,wishCoins:0,exchangeCoins:0,rankStars:0,
+  cabinet:{},
+  equipped:{lolita:null,robe:null,hat:null,jewelry:null,table:null,cardface:null},
+  mallOwned:[]
+};
+if(!player.cabinet) player.cabinet={};
+if(!player.equipped||!player.equipped.lolita) player.equipped={lolita:null,robe:null,hat:null,jewelry:null,table:null,cardface:null};
+if(!player.diamonds) player.diamonds=0;
+if(!player.wishCoins) player.wishCoins=0;
+if(!player.exchangeCoins) player.exchangeCoins=0;
+if(!player.mallOwned) player.mallOwned=[];
+let currentGame = null;
+let currentSlot = null;
+function save(){localStorage.setItem('cellar_player',JSON.stringify(player))}
+
+/* ═══ INIT ═══ */
+function init(){
+  if(!player.nickname){
+    const ns=['小狐狸','果汁猫','桶中鼠','酒庄兔','品鉴熊','调酒师'];
+    player.nickname=ns[Math.floor(Math.random()*ns.length)]+Math.floor(Math.random()*100);
+    save();
+  }
+  buildDoors();
+  buildTorches();
+  buildDust();
+  syncUI();
+  checkReturn();
+}
+
+/* ═══ BUILD DOORS (painted perspective - near=big, far=small) ═══ */
+function buildDoors(){
+  const layer=document.getElementById('doorsLayer');
+  // Positions: [left%, top%, scale, side]
+  // Nearest doors are biggest and toward edges; farthest are small and toward center
+  const positions=[
+    {x:15, y:48, s:1.0,   side:'left'},   // Flip7 - closest, left
+    {x:78, y:48, s:1.0,   side:'right'},  // UNO - closest, right
+    {x:30, y:48, s:0.88,  side:'left'},   // 大话牌 - mid, left
+    {x:65, y:48, s:0.88,  side:'right'},  // 大话骰 - mid, right
+    {x:47, y:48, s:0.78,  side:'center'}, // 骗子酒馆 - far, center
+  ];
+
+  let html='';
+  GAMES.forEach((g,i)=>{
+    const p=positions[i];
+    const w=Math.round(120*p.s), h=Math.round(200*p.s);
+    const iconSize=Math.round(38*p.s);
+    const nameSize=Math.max(11,Math.round(13*p.s));
+    html+=`
+    <div class="door-group" style="left:${p.x}%;top:${p.y}%;transform:translate(-50%,-50%) scale(${p.s});--hover-tf:translate(-50%,-50%) scale(${p.s*1.06})" onclick="enterDoor(${i})">
+      <div class="door-body" style="width:${w}px;height:${h}px">
+        <div class="door-panel-inner">
+          <div class="door-inner-frame"></div>
+          <div class="door-studs-tl"></div>
+          <div class="door-studs-tr"></div>
+          <div class="door-studs-bl"></div>
+          <div class="door-studs-br"></div>
+          <div class="door-handle"></div>
+        </div>
+        <div class="door-icon" style="font-size:${iconSize}px">${g.icon}</div>
+        <div class="door-name" style="font-size:${nameSize}px">${g.name}</div>
+        <div class="door-glow"></div>
+      </div>
+      <div class="door-light-under" style="width:${w*0.8}px"></div>
+    </div>`;
+  });
+  layer.innerHTML=html;
+}
+
+function buildTorches(){
+  const layer=document.getElementById('torchLayer');
+  const torchPos=[
+    {x:8,y:36},{x:90,y:36},
+    {x:22,y:39},{x:76,y:39},
+    {x:38,y:41},{x:60,y:41},
+  ];
+  let html='';
+  torchPos.forEach(t=>{
+    html+=`<div class="torch" style="left:${t.x}%;top:${t.y}%">
+      <div class="torch-glow"></div>
+      <div class="torch-flame"></div>
+      <div class="torch-bracket"></div>
+    </div>`;
+    // Light pool on floor below each torch
+    html+=`<div class="light-pool" style="left:${t.x}%;top:${t.y+18}%;width:80px;height:40px;transform:translateX(-50%)"></div>`;
+  });
+  layer.innerHTML=html;
+}
+
+function buildDust(){
+  const layer=document.getElementById('dustLayer');
+  let html='';
+  for(let i=0;i<18;i++){
+    const x=5+Math.random()*90, y=15+Math.random()*70;
+    const dx=(-25+Math.random()*50)+'px', dy=(-40+Math.random()*20)+'px';
+    const dur=(9+Math.random()*8)+'s', del=(Math.random()*10)+'s';
+    html+=`<div class="dust" style="left:${x}%;top:${y}%;--dx:${dx};--dy:${dy};--dur:${dur};--del:${del}"></div>`;
+  }
+  layer.innerHTML=html;
+}
+
+/* ═══ DOOR → ROOM ═══ */
+function enterDoor(idx){
+  currentGame=GAMES[idx];
+  document.getElementById('roomTitle').textContent=currentGame.name;
+  document.getElementById('tableLabel').textContent=currentGame.name;
+  const sel=document.getElementById('gameSelect');
+  sel.innerHTML='';
+  if(currentGame.variants.length<=1){
+    sel.style.display='none';
+  }else{
+    sel.style.display='';
+    currentGame.variants.forEach(v=>{const o=document.createElement('option');o.textContent=v;sel.appendChild(o)});
+  }
+  document.getElementById('seatIcon0').textContent=player.avatar;
+  document.getElementById('roomScreen').classList.add('show');
+}
+function closeRoom(){document.getElementById('roomScreen').classList.remove('show')}
+
+function startGame(){
+  const sel=document.getElementById('gameSelect');
+  const vi=sel.style.display==='none'?0:sel.selectedIndex;
+  const route=currentGame.routes[vi];
+  if(!route){showToast('该玩法开发中');return;}
+  const params=new URLSearchParams({nick:player.nickname,emoji:player.avatar,mode:'compete',game:currentGame.variants[vi]});
+  location.href=`/games/${route}.html?${params}`;
+}
+
+/* ═══ CABINET (陈列柜 - 衣橱式) ═══ */
+function openShop(){
+  document.getElementById('shopBal').textContent=player.coins.toLocaleString();
+  buildWardrobe();
+  document.getElementById('slotDetail').classList.remove('show');
+  document.getElementById('shopScreen').classList.add('show');
+}
+function closeShop(){document.getElementById('shopScreen').classList.remove('show')}
+
+function buildWardrobe(){
+  const frame=document.getElementById('wardrobeFrame');
+  let html='';
+  WARDROBE_SLOTS.forEach(slot=>{
+    const eqId=player.equipped[slot.key];
+    const items=SHOP_DATA[slot.key]||[];
+    const eqItem=eqId?items.find(it=>it.id===eqId):null;
+    const lvl=eqItem?getItemLevel(eqItem.id):0;
+    const displayIcon=eqItem?eqItem.icon:slot.icon;
+    const displayName=eqItem?eqItem.name:'未装备';
+    const tallClass=slot.tall?' slot-tall':'';
+    html+=`<div class="wardrobe-slot${tallClass}" style="grid-column:${slot.col};grid-row:${slot.row}" onclick="openSlotDetail('${slot.key}')">
+      <div class="slot-icon">${displayIcon}</div>
+      <div class="slot-label">${slot.label}</div>
+      <div class="slot-item-name">${displayName}</div>
+      ${lvl>0?`<div class="slot-lvl">Lv.${lvl}</div>`:''}
+    </div>`;
+  });
+  frame.innerHTML=html;
+}
+
+function getItemLevel(id){ return player.cabinet[id]||0; }
+
+function openSlotDetail(slotKey){
+  currentSlot=slotKey;
+  const slotInfo=WARDROBE_SLOTS.find(s=>s.key===slotKey);
+  document.getElementById('slotDetailTitle').textContent=slotInfo.icon+' '+slotInfo.label;
+  document.getElementById('slotDetailBal').textContent=player.coins.toLocaleString();
+  renderSlotItems(slotKey);
+  document.getElementById('slotDetail').classList.add('show');
+}
+function closeSlotDetail(){
+  document.getElementById('slotDetail').classList.remove('show');
+  buildWardrobe();
+}
+
+function renderSlotItems(slot){
+  const grid=document.getElementById('slotDetailGrid');
+  const items=SHOP_DATA[slot]||[];
+  grid.innerHTML='';
+  items.forEach(item=>{
+    const lvl=getItemLevel(item.id);
+    const owned=lvl>0||item.price===0;
+    const isEquipped=player.equipped[slot]===item.id;
+    const d=document.createElement('div');
+    d.className='shop-item'+(owned?' owned':'')+(isEquipped?' equipped':'');
+    let priceHtml='';
+    if(item.price===0){
+      priceHtml='<span class="item-free">默认</span>';
+    }else if(!owned){
+      priceHtml=`<span class="item-buy">🍇 ${item.price.toLocaleString()}</span>`;
+    }else if(lvl<10){
+      const cost=UPGRADE_COSTS[lvl-1];
+      priceHtml=`<span class="item-upgrade">升级 🍇${cost}</span>`;
+    }else{
+      priceHtml='<span class="item-max">满级 ✦</span>';
+    }
+    const lvlBar=(owned&&lvl>0)?`<div class="item-lvl">Lv.${lvl}<div class="lvl-bar"><div class="lvl-fill" style="width:${(lvl/10)*100}%"></div></div></div>`:'';
+    d.innerHTML=`
+      <div class="shop-item-icon">${item.icon}</div>
+      <div class="shop-item-name">${item.name}</div>
+      ${lvlBar}
+      <div class="shop-item-price">${priceHtml}</div>
+      ${owned&&!isEquipped?'<div class="equip-btn" data-id="'+item.id+'" data-slot="'+slot+'">装备</div>':''}
+      ${isEquipped?'<div class="equipped-tag">✓ 已装备</div>':''}
+    `;
+    d.onclick=(e)=>{
+      if(e.target.classList.contains('equip-btn')){
+        equipItem(slot,item.id);
+        return;
+      }
+      if(item.price===0)return;
+      if(!owned) buyItem(item,slot);
+      else if(lvl<10) upgradeItem(item,slot);
+    };
+    grid.appendChild(d);
+  });
+}
+
+function buyItem(item,slot){
+  if(player.coins<item.price){showToast('葡萄币不足');return;}
+  if(!confirm(`花费 ${item.price.toLocaleString()} 🍇 购买「${item.name}」？`))return;
+  player.coins-=item.price;
+  player.cabinet[item.id]=1;
+  player.equipped[slot]=item.id;
+  save();syncUI();renderSlotItems(slot);
+  document.getElementById('slotDetailBal').textContent=player.coins.toLocaleString();
+  document.getElementById('shopBal').textContent=player.coins.toLocaleString();
+  showToast(`获得「${item.name}」Lv.1！已自动装备`);
+}
+
+function upgradeItem(item,slot){
+  const lvl=getItemLevel(item.id);
+  if(lvl>=10)return;
+  const cost=UPGRADE_COSTS[lvl-1];
+  if(player.coins<cost){showToast('葡萄币不足');return;}
+  if(!confirm(`花费 ${cost} 🍇 升级「${item.name}」到 Lv.${lvl+1}？`))return;
+  player.coins-=cost;
+  player.cabinet[item.id]=lvl+1;
+  save();syncUI();renderSlotItems(slot);
+  document.getElementById('slotDetailBal').textContent=player.coins.toLocaleString();
+  document.getElementById('shopBal').textContent=player.coins.toLocaleString();
+  showToast(`「${item.name}」升级到 Lv.${lvl+1}！`);
+}
+
+function equipItem(slot,id){
+  player.equipped[slot]=id;
+  save();renderSlotItems(slot);
+  showToast('已装备');
+}
+
+/* ═══ RANK & LEADERBOARD ═══ */
+function generateLeaderboard(){
+  const nickParts=[['暗夜','星辰','银月','血色','幽灵','黑桃','红心','深渊','永恒','疾风'],['猎手','骑士','诡术','领主','刺客','法师','牧师','游侠','执政','王者']];
+  const emojis=['🦊','🐱','🐻','🐰','🐼','🦉','🦁','🐺','🦅','🐍','🦇','🐉','🦋','🌙','⭐'];
+  const board=[];
+  for(let i=0;i<100;i++){
+    const t=i/99;
+    const base=350-t*230;
+    const jitter=(Math.random()-0.5)*12;
+    const totalStars=Math.max(80,Math.round(base+jitter));
+    const nick=nickParts[0][Math.floor(Math.random()*10)]+nickParts[1][Math.floor(Math.random()*10)]+Math.floor(Math.random()*99);
+    const emoji=emojis[Math.floor(Math.random()*emojis.length)];
+    board.push({rank:i+1,nick,emoji,totalStars});
+  }
+  board.sort((a,b)=>b.totalStars-a.totalStars);
+  board.forEach((p,i)=>p.rank=i+1);
+  return board;
+}
+
+function getRankLabel(totalStars){
+  let rem=totalStars;
+  for(let r=0;r<RANKS.length;r++){
+    for(let s=0;s<RANKS[r].subs;s++){
+      if(rem<RANKS[r].stars){
+        return{name:RANKS[r].name,icon:RANKS[r].icon,tier:r,phase:s+1,starsInPhase:rem,starsPerPhase:RANKS[r].stars,protect:RANKS[r].protect};
+      }
+      rem-=RANKS[r].stars;
+    }
+  }
+  const last=RANKS[RANKS.length-1];
+  return{name:last.name,icon:last.icon,tier:RANKS.length-1,phase:3,starsInPhase:rem,starsPerPhase:5,protect:false,overflow:true};
+}
+
+function getRankDisplay(totalStars){
+  const r=getRankLabel(totalStars);
+  const roman=['','I','II','III'];
+  if(r.overflow) return `${r.icon} ${r.name} III ×${r.starsInPhase}星`;
+  return `${r.icon} ${r.name} ${roman[r.phase]}`;
+}
+
+function openRank(){
+  const body=document.getElementById('rankBody');
+  let html='<div class="lb-header"><div class="lb-col-rank">#</div><div class="lb-col-name">玩家</div><div class="lb-col-tier">段位</div></div>';
+  LEADERBOARD.forEach(p=>{
+    const rk=getRankLabel(p.totalStars);
+    const tierText=rk.overflow?`${rk.name} III ×${rk.starsInPhase}星`:`${rk.name} ${['','I','II','III'][rk.phase]}`;
+    const isTop3=p.rank<=3;
+    const medal=p.rank===1?'🥇':p.rank===2?'🥈':p.rank===3?'🥉':'';
+    html+=`<div class="lb-row${isTop3?' lb-top3':''}">
+      <div class="lb-col-rank">${medal||p.rank}</div>
+      <div class="lb-col-name"><span class="lb-emoji">${p.emoji}</span>${p.nick}</div>
+      <div class="lb-col-tier">${rk.icon} ${tierText}</div>
+    </div>`;
+  });
+  const myInfo=getRankLabel(player.rankStars);
+  const myTier=myInfo.overflow?`${myInfo.name} III ×${myInfo.starsInPhase}星`:`${myInfo.name} ${['','I','II','III'][myInfo.phase]}`;
+  html+=`<div class="lb-me"><div class="lb-col-rank">—</div><div class="lb-col-name"><span class="lb-emoji">${player.avatar}</span>${player.nickname} (我)</div><div class="lb-col-tier">${myInfo.icon} ${myTier}</div></div>`;
+  body.innerHTML=html;
+  document.getElementById('rankOverlay').classList.add('show');
+}
+function closeRank(){document.getElementById('rankOverlay').classList.remove('show')}
+
+/* ═══ SYNC UI ═══ */
+function syncUI(){
+  document.getElementById('hudAvatar').textContent=player.avatar;
+  document.getElementById('hudName').textContent=player.nickname;
+  document.getElementById('hudCoins').textContent=player.coins.toLocaleString();
+  document.getElementById('hudDiamonds').textContent=player.diamonds.toLocaleString();
+  const r=getRankLabel(player.rankStars);
+  const tierText=r.overflow?`${r.name} III ×${r.starsInPhase}星`:`${r.name} ${['','I','II','III'][r.phase]}`;
+  document.getElementById('hudRank').textContent=tierText;
+  let sh='';
+  const showStars=Math.min(r.starsPerPhase,5);
+  for(let i=0;i<showStars;i++)sh+=`<span class="star ${i<r.starsInPhase&&!r.overflow?'filled':''}">⭐</span>`;
+  if(r.overflow) sh=`<span class="star filled">⭐×${r.starsInPhase}</span>`;
+  document.getElementById('starsRow').innerHTML=sh;
+}
+function getRankInfo(total){
+  const r=getRankLabel(total);
+  return{name:r.name,icon:r.icon,tier:r.tier,sub:['','I','II','III'][r.phase],starsInSub:r.starsInPhase,starsNeeded:r.starsPerPhase,protect:r.protect};
+}
+
+/* ═══ POST-GAME ═══ */
+function checkReturn(){
+  const p=new URLSearchParams(location.search);
+  const placement=parseInt(p.get('placement'));
+  const from=p.get('from');
+  if(!placement||!from)return;
+  history.replaceState(null,'',location.pathname);
+  setTimeout(()=>{
+    const starTable={1:3,2:1,3:-1,4:-2};
+    const coinTable={1:30,2:15,3:5,4:0};
+    const change=starTable[placement]||0;
+    const rank=getRankInfo(player.rankStars);
+    const ac=(change<0&&rank.protect)?0:change;
+    player.rankStars=Math.max(0,player.rankStars+ac);
+    const mult=[1,1,1.2,1.5,2.0,2.5][rank.tier]||1;
+    const coins=Math.floor((coinTable[placement]||0)*mult);
+    player.coins+=coins;
+    save();syncUI();
+    const emoji=placement===1?'🏆':placement===2?'👍':'😅';
+    showToast(`${emoji} 第${placement}名 | ⭐${ac>=0?'+':''}${ac} | 🍇+${coins}`);
+  },400);
+}
+
+/* ═══ UTILS ═══ */
+function changeName(){
+  const n=prompt('修改昵称（最多8字）',player.nickname);
+  if(!n||!n.trim()||n.trim().length>8)return;
+  player.nickname=n.trim();save();syncUI();
+}
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+function fitDevice(){
+  const d=document.querySelector('.device');
+  const s=Math.min(window.innerWidth/960,window.innerHeight/540);
+  d.style.transform=`scale(${s})`;
+}
+/* ═══ RECHARGE ═══ */
+const RECHARGE_TIERS=[
+  {diamonds:60,price:'¥6',bonus:''},
+  {diamonds:300,price:'¥30',bonus:'+30'},
+  {diamonds:680,price:'¥68',bonus:'+80'},
+  {diamonds:1280,price:'¥128',bonus:'+200'},
+  {diamonds:3280,price:'¥328',bonus:'+600'},
+  {diamonds:6480,price:'¥648',bonus:'+1400'},
+];
+
+function openRecharge(){
+  const grid=document.getElementById('rechargeGrid');
+  grid.innerHTML='';
+  RECHARGE_TIERS.forEach(t=>{
+    const d=document.createElement('div');
+    d.className='recharge-item';
+    d.innerHTML=`<div class="ri-amount">💎 ${t.diamonds}</div><div class="ri-price">${t.price}</div>${t.bonus?`<div class="ri-bonus">赠送${t.bonus}</div>`:''}`;
+    d.onclick=()=>doRecharge(t);
+    grid.appendChild(d);
+  });
+  document.getElementById('rechargeOverlay').classList.add('show');
+}
+function closeRecharge(){document.getElementById('rechargeOverlay').classList.remove('show')}
+function doRecharge(tier){
+  if(!confirm(`确认充值 ${tier.price} 获得 💎${tier.diamonds}${tier.bonus?' (赠送'+tier.bonus+')':''}？`))return;
+  player.diamonds+=tier.diamonds;
+  save();syncUI();
+  showToast(`充值成功！获得 💎${tier.diamonds}`);
+  closeRecharge();
+}
+
+/* ═══ MALL (商城) ═══ */
+const MALL_CATEGORIES=[
+  {key:'appearance',label:'🧥 外观',subs:[
+    {key:'clothes',label:'衣服',items:[
+      {id:'m_plaid',icon:'👕',name:'格子衬衫',price:120},
+      {id:'m_vest',icon:'🧥',name:'酒红马甲',price:280},
+      {id:'m_gold_coat',icon:'✨',name:'金丝外套',price:580},
+      {id:'m_tuxedo',icon:'🎩',name:'暗夜燕尾服',price:880},
+    ]},
+    {key:'hat',label:'帽子',items:[
+      {id:'m_cap',icon:'🧢',name:'鸭舌帽',price:80},
+      {id:'m_top',icon:'🎩',name:'皮质礼帽',price:200},
+      {id:'m_beret',icon:'👒',name:'金边贝雷帽',price:420},
+    ]},
+    {key:'jewelry',label:'首饰',items:[
+      {id:'m_bead',icon:'📿',name:'木珠手链',price:60},
+      {id:'m_chain',icon:'⛓',name:'银链手链',price:180},
+      {id:'m_ruby',icon:'💎',name:'红宝石吊坠',price:380},
+    ]},
+    {key:'table',label:'牌桌',items:[
+      {id:'m_stone',icon:'🪨',name:'石板桌',price:160},
+      {id:'m_oak',icon:'🌳',name:'橡木圆桌',price:360},
+      {id:'m_ebony',icon:'🖤',name:'黑檀雕花桌',price:680},
+    ]},
+    {key:'cardface',label:'牌面',items:[
+      {id:'m_wood',icon:'🪵',name:'木纹牌面',price:100},
+      {id:'m_vine',icon:'🍇',name:'葡萄藤牌面',price:240},
+      {id:'m_starry',icon:'🌌',name:'星空牌面',price:480},
+    ]},
+  ]},
+  {key:'action',label:'💃 动作',subs:[
+    {key:'flip_hand',label:'翻牌手部',items:[
+      {id:'m_spin',icon:'🔄',name:'旋转翻牌',price:200},
+      {id:'m_snap',icon:'👌',name:'弹指翻牌',price:350},
+    ]},
+    {key:'enter',label:'入场动作',items:[
+      {id:'m_slide',icon:'🚶',name:'滑步入场',price:300},
+      {id:'m_flip_enter',icon:'🤸',name:'空翻入场',price:520},
+    ]},
+    {key:'win',label:'胜利动作',items:[
+      {id:'m_dance',icon:'💃',name:'胜利之舞',price:280},
+      {id:'m_toast',icon:'🥂',name:'举杯庆祝',price:400},
+    ]},
+    {key:'idle',label:'局内动作',items:[
+      {id:'m_chip',icon:'🪙',name:'转硬币',price:150},
+      {id:'m_drum',icon:'🥁',name:'敲桌子',price:180},
+    ]},
+  ]},
+  {key:'effect',label:'✨ 特效',subs:[
+    {key:'peek',label:'看牌特效',items:[
+      {id:'m_glow',icon:'🔦',name:'金光看牌',price:200},
+      {id:'m_smoke',icon:'💨',name:'烟雾看牌',price:320},
+    ]},
+    {key:'play_fx',label:'出牌特效',items:[
+      {id:'m_fire',icon:'🔥',name:'火焰出牌',price:350},
+      {id:'m_ice_fx',icon:'❄️',name:'冰霜出牌',price:350},
+    ]},
+    {key:'win_fx',label:'胜利特效',items:[
+      {id:'m_firework',icon:'🎆',name:'烟花绽放',price:400},
+      {id:'m_confetti',icon:'🎊',name:'彩带飞舞',price:280},
+    ]},
+    {key:'hand_fx',label:'牌型特效',items:[
+      {id:'m_royal',icon:'👑',name:'皇家特效',price:600},
+      {id:'m_thunder',icon:'⚡',name:'雷霆特效',price:500},
+    ]},
+    {key:'bet_fx',label:'跟注特效',items:[
+      {id:'m_coin_rain',icon:'🌧',name:'金币雨',price:250},
+      {id:'m_quake',icon:'💥',name:'震动跟注',price:300},
+    ]},
+  ]},
+];
+
+let mallCurrentCat=0;
+function openMall(){
+  document.getElementById('mallDiamonds').textContent=player.diamonds.toLocaleString();
+  const tabs=document.getElementById('mallTabs');
+  tabs.innerHTML='';
+  MALL_CATEGORIES.forEach((cat,i)=>{
+    const d=document.createElement('div');
+    d.className='mall-tab'+(i===0?' active':'');
+    d.textContent=cat.label;
+    d.onclick=()=>{tabs.querySelectorAll('.mall-tab').forEach(t=>t.classList.remove('active'));d.classList.add('active');mallCurrentCat=i;renderMall()};
+    tabs.appendChild(d);
+  });
+  mallCurrentCat=0;
+  renderMall();
+  document.getElementById('mallScreen').classList.add('show');
+}
+function closeMall(){document.getElementById('mallScreen').classList.remove('show')}
+
+function renderMall(){
+  const body=document.getElementById('mallBody');
+  const cat=MALL_CATEGORIES[mallCurrentCat];
+  let html='<button class="mall-gacha-btn" onclick="openGacha()">🎰 酒庄祈愿（抽奖）</button>';
+  cat.subs.forEach(sub=>{
+    html+=`<div class="mall-sub-label">${sub.label}</div>`;
+    html+='<div class="mall-grid">';
+    sub.items.forEach(item=>{
+      const owned=player.mallOwned.includes(item.id);
+      html+=`<div class="mall-item${owned?' owned':''}" onclick="${owned?'':'mallBuy(\''+item.id+'\','+item.price+',\''+item.name+'\')'}">
+        <div class="mi-icon">${item.icon}</div>
+        <div class="mi-name">${item.name}</div>
+        <div class="mi-price">${owned?'已拥有':'💎 '+item.price}</div>
+      </div>`;
+    });
+    html+='</div>';
+  });
+  body.innerHTML=html;
+}
+
+const WISH_PRICE=10;
+const GACHA_PRIZES=[
+  {icon:'🍇',name:'葡萄币×50',type:'coins',value:50,weight:30},
+  {icon:'🍇',name:'葡萄币×100',type:'coins',value:100,weight:20},
+  {icon:'🔄',name:'兑换币×1',type:'exchange',value:1,weight:25},
+  {icon:'🔄',name:'兑换币×3',type:'exchange',value:3,weight:12},
+  {icon:'🔄',name:'兑换币×5',type:'exchange',value:5,weight:6},
+  {icon:'🔄',name:'兑换币×10',type:'exchange',value:10,weight:3},
+  {icon:'🪙',name:'祈愿币×2',type:'wishback',value:2,weight:4},
+];
+const GACHA_EXCHANGE=[
+  {id:'gx_loli_queen',icon:'👸',name:'女王洛丽塔',cost:80},
+  {id:'gx_dragon',icon:'🐉',name:'龙纹长袍',cost:80},
+  {id:'gx_crown',icon:'👑',name:'酒神桂冠',cost:50},
+  {id:'gx_snake',icon:'🐍',name:'金蛇臂环',cost:50},
+  {id:'gx_gold_table',icon:'👑',name:'黄金酒神桌',cost:60},
+  {id:'gx_gold_card',icon:'💫',name:'金箔动态牌面',cost:60},
+  {id:'gx_royal_fx',icon:'👑',name:'皇家特效',cost:70},
+  {id:'gx_flip_enter',icon:'🤸',name:'空翻入场',cost:45},
+];
+
+function mallBuy(id,price,name){
+  if(player.diamonds<price){showToast('钻石不足，请充值');return;}
+  if(!confirm(`花费 💎${price} 购买「${name}」？`))return;
+  player.diamonds-=price;
+  player.mallOwned.push(id);
+  save();syncUI();renderMall();
+  document.getElementById('mallDiamonds').textContent=player.diamonds.toLocaleString();
+  showToast(`获得「${name}」！`);
+}
+
+function openGacha(){
+  document.getElementById('gachaWishCoins').textContent=player.wishCoins;
+  document.getElementById('gachaExCoins').textContent=player.exchangeCoins;
+  renderGacha();
+  document.getElementById('gachaPanel').classList.add('show');
+}
+function closeGacha(){document.getElementById('gachaPanel').classList.remove('show')}
+function renderGacha(){
+  document.getElementById('gachaWishCoins').textContent=player.wishCoins;
+  document.getElementById('gachaExCoins').textContent=player.exchangeCoins;
+  const el=document.getElementById('gachaContent');
+  let html=`
+  <div class="gacha-section">
+    <h3>购买祈愿币 💎${WISH_PRICE} = 1枚</h3>
+    <div class="gacha-buy-row">
+      <button class="gacha-buy-btn" onclick="buyWish(1)">1枚 💎${WISH_PRICE}</button>
+      <button class="gacha-buy-btn" onclick="buyWish(10)">10枚 💎${WISH_PRICE*10}</button>
+      <button class="gacha-buy-btn" onclick="buyWish(50)">50枚 💎${WISH_PRICE*50}</button>
+    </div>
+  </div>
+  <div class="gacha-section">
+    <h3>祈愿抽奖</h3>
+    <div style="display:flex;gap:8px;margin-bottom:8px">
+      <button class="gacha-draw-btn" onclick="doGachaDraw(1)">抽1次 🪙1</button>
+      <button class="gacha-draw-btn" onclick="doGachaDraw(10)">抽10次 🪙10</button>
+    </div>
+    <div class="gacha-result" id="gachaResult"></div>
+  </div>
+  <div class="gacha-section" style="flex:1;overflow:hidden;display:flex;flex-direction:column">
+    <h3>兑换商店</h3>
+    <div class="gacha-exchange-grid">`;
+  GACHA_EXCHANGE.forEach(item=>{
+    const owned=player.mallOwned.includes(item.id);
+    html+=`<div class="gacha-ex-item" onclick="${owned?'':'exchangeItem(\''+item.id+'\','+item.cost+',\''+item.name+'\')'}">
+      <div class="ex-icon">${item.icon}</div>
+      <div class="ex-name">${item.name}</div>
+      <div class="ex-cost">${owned?'已拥有':'🔄 '+item.cost}</div>
+    </div>`;
+  });
+  html+='</div></div>';
+  el.innerHTML=html;
+}
+
+function buyWish(count){
+  const cost=count*WISH_PRICE;
+  if(player.diamonds<cost){showToast('钻石不足');return;}
+  player.diamonds-=cost;
+  player.wishCoins+=count;
+  save();syncUI();renderGacha();
+  document.getElementById('mallDiamonds').textContent=player.diamonds.toLocaleString();
+  showToast(`获得 ${count} 枚祈愿币`);
+}
+
+function doGachaDraw(times){
+  if(player.wishCoins<times){showToast('祈愿币不足');return;}
+  player.wishCoins-=times;
+  const results=[];
+  const totalWeight=GACHA_PRIZES.reduce((s,p)=>s+p.weight,0);
+  for(let i=0;i<times;i++){
+    let r=Math.random()*totalWeight,acc=0;
+    for(const prize of GACHA_PRIZES){
+      acc+=prize.weight;
+      if(r<acc){
+        results.push(prize);
+        if(prize.type==='coins') player.coins+=prize.value;
+        else if(prize.type==='exchange') player.exchangeCoins+=prize.value;
+        else if(prize.type==='wishback') player.wishCoins+=prize.value;
+        break;
+      }
+    }
+  }
+  save();syncUI();renderGacha();
+  const resEl=document.getElementById('gachaResult');
+  if(times===1){
+    resEl.textContent=`${results[0].icon} ${results[0].name}`;
+  }else{
+    const summary={};
+    results.forEach(r=>{summary[r.name]=(summary[r.name]||0)+1;});
+    resEl.textContent=Object.entries(summary).map(([k,v])=>`${k}×${v}`).join(' | ');
+  }
+}
+
+function exchangeItem(id,cost,name){
+  if(player.exchangeCoins<cost){showToast('兑换币不足');return;}
+  if(!confirm(`花费 🔄${cost} 兑换「${name}」？`))return;
+  player.exchangeCoins-=cost;
+  player.mallOwned.push(id);
+  save();syncUI();renderGacha();
+  showToast(`兑换成功！获得「${name}」`);
+}
+
+window.addEventListener('resize',fitDevice);
+fitDevice();
+init();
+</script>
+</body>
+</html>

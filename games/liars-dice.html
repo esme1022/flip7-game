@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>大话骰</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;user-select:none}
+html,body{width:100%;height:100%;overflow:hidden;background:#050208}
+body{font-family:'Noto Sans SC',system-ui,sans-serif;display:flex;align-items:center;justify-content:center}
+
+.device{
+  width:960px;height:540px;position:relative;overflow:hidden;
+  border-radius:14px;border:2px solid #2a1a0a;
+  transform-origin:center center;
+  background:linear-gradient(145deg,#0f0818 0%,#1a0e04 40%,#0a0510 100%);
+}
+
+.exit-btn{
+  position:absolute;top:6px;left:8px;z-index:30;
+  width:32px;height:32px;border-radius:50%;border:none;cursor:pointer;
+  background:rgba(255,255,255,.55);color:#4a2070;font-size:18px;font-weight:900;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .15s;backdrop-filter:blur(4px);
+}
+.exit-btn:hover{background:rgba(255,255,255,.85)}
+
+/* Header */
+.header{
+  position:absolute;top:0;left:0;right:0;height:42px;
+  display:flex;align-items:center;padding:0 14px 0 44px;z-index:20;
+  background:linear-gradient(180deg,rgba(255,255,255,.35),transparent);
+}
+.header-title{font-size:14px;font-weight:900;color:#4a2070;flex:1}
+.header-mode{
+  font-size:11px;font-weight:700;color:#7a5090;
+  background:rgba(255,255,255,.5);padding:3px 10px;border-radius:12px;
+}
+.header-coins{font-size:12px;font-weight:700;color:#4a2070;margin-left:8px}
+
+/* Table */
+.table-area{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-46%);
+  width:320px;height:220px;
+}
+.table-surface{
+  width:100%;height:100%;border-radius:50%;
+  background:radial-gradient(ellipse at center,#9b6fc4 0%,#7a4fa8 55%,#5c3588 100%);
+  box-shadow:0 8px 32px rgba(60,20,100,.45),inset 0 2px 12px rgba(255,255,255,.15);
+  border:3px solid rgba(255,255,255,.2);
+  display:flex;align-items:center;justify-content:center;flex-direction:column;
+}
+.bid-display{text-align:center;padding:8px 16px}
+.bid-label{font-size:11px;color:rgba(255,255,255,.7);font-weight:700;margin-bottom:4px}
+.bid-value{
+  font-size:28px;font-weight:900;color:#fff;
+  text-shadow:0 2px 8px rgba(0,0,0,.3);
+  min-height:36px;
+}
+.bid-value .die-icon{font-size:26px}
+.bid-bidder{font-size:10px;color:rgba(255,255,255,.6);margin-top:4px}
+.wild-hint{font-size:9px;color:rgba(255,255,255,.5);margin-top:2px}
+
+/* Players */
+.player{
+  position:absolute;display:flex;flex-direction:column;align-items:center;gap:4px;
+  transition:opacity .4s,filter .4s;
+}
+.player.eliminated{opacity:.35;filter:grayscale(.8)}
+.player.active-turn .player-card{box-shadow:0 0 0 3px #ffd54f,0 4px 16px rgba(255,213,79,.5)}
+
+.player-card{
+  background:rgba(255,255,255,.55);border:2px solid rgba(255,255,255,.8);
+  border-radius:12px;padding:6px 10px;min-width:100px;
+  backdrop-filter:blur(4px);transition:box-shadow .3s;
+}
+.player-top{top:48px;left:50%;transform:translateX(-50%)}
+.player-bottom{bottom:130px;left:50%;transform:translateX(-50%)}
+.player-left{top:50%;left:14px;transform:translateY(-50%)}
+.player-right{top:50%;right:14px;transform:translateY(-50%)}
+
+.player-info{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.player-emoji{font-size:22px;line-height:1}
+.player-name{font-size:11px;font-weight:700;color:#4a2070;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.player-lives{display:flex;gap:3px;justify-content:center;margin-bottom:4px}
+.life-bottle{font-size:16px;transition:opacity .3s,transform .3s}
+.life-bottle.lost{opacity:.25;filter:grayscale(1);transform:scale(.85)}
+
+/* Dice cup area */
+.cup-area{
+  position:relative;display:flex;align-items:center;justify-content:center;
+  gap:3px;min-height:36px;padding:4px;
+}
+.cup{
+  position:absolute;inset:0;
+  background:linear-gradient(180deg,#8b6914,#6b4f0a);
+  border-radius:8px 8px 4px 4px;
+  border:2px solid #a08020;
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;transition:transform .6s cubic-bezier(.34,1.56,.64,1),opacity .4s;
+  z-index:2;cursor:default;
+}
+.cup.hidden-dice .cup-icon{filter:drop-shadow(0 2px 4px rgba(0,0,0,.3))}
+.cup.revealing{transform:translateY(-50px) rotate(-15deg);opacity:0}
+.cup.revealed{display:none}
+
+.dice-row{display:flex;gap:2px;flex-wrap:wrap;justify-content:center;max-width:120px}
+.die{
+  width:22px;height:22px;display:flex;align-items:center;justify-content:center;
+  font-size:18px;line-height:1;
+  opacity:0;transform:scale(0) rotate(180deg);
+  transition:opacity .35s,transform .35s;
+}
+.die.show{opacity:1;transform:scale(1) rotate(0)}
+.die.reveal-anim{animation:diePop .5s cubic-bezier(.34,1.56,.64,1) forwards}
+@keyframes diePop{
+  0%{opacity:0;transform:scale(0) rotate(180deg)}
+  60%{transform:scale(1.2) rotate(-10deg)}
+  100%{opacity:1;transform:scale(1) rotate(0)}
+}
+.die.human-die{opacity:1;transform:scale(1);animation:none}
+
+/* Human controls */
+.controls{
+  position:absolute;bottom:4px;left:50%;transform:translateX(-50%);
+  display:flex;align-items:center;gap:8px;
+  background:rgba(255,255,255,.65);border:2px solid rgba(255,255,255,.85);
+  border-radius:14px;padding:6px 12px;backdrop-filter:blur(6px);
+  z-index:15;transition:opacity .3s,transform .3s;
+}
+.controls.hidden{opacity:0;pointer-events:none;transform:translateX(-50%) translateY(20px)}
+
+.ctrl-group{display:flex;align-items:center;gap:4px}
+.ctrl-label{font-size:9px;color:#7a5090;font-weight:700}
+
+.qty-btn{
+  width:28px;height:28px;border-radius:8px;border:none;
+  background:linear-gradient(135deg,#ab47bc,#8e24aa);color:#fff;
+  font-size:16px;font-weight:900;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .12s;
+}
+.qty-btn:hover{transform:scale(1.08)}
+.qty-btn:active{transform:scale(.95)}
+.qty-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+
+.qty-val{
+  width:32px;text-align:center;font-size:18px;font-weight:900;color:#4a2070;
+}
+
+.face-selector{display:flex;gap:2px}
+.face-btn{
+  width:30px;height:30px;border-radius:8px;border:2px solid transparent;
+  background:rgba(255,255,255,.6);font-size:18px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s;
+}
+.face-btn.selected{border-color:#8e24aa;background:rgba(171,71,188,.25);box-shadow:0 0 8px rgba(142,36,170,.3)}
+.face-btn:hover{background:rgba(255,255,255,.85)}
+
+.action-btn{
+  padding:8px 16px;border-radius:10px;border:none;
+  font-size:14px;font-weight:900;color:#fff;cursor:pointer;
+  transition:transform .12s,box-shadow .12s;
+}
+.action-btn:hover{transform:translateY(-2px)}
+.action-btn:active{transform:scale(.96)}
+.action-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.btn-bid{background:linear-gradient(135deg,#7c4dff,#651fff);box-shadow:0 3px 10px rgba(124,77,255,.4)}
+.btn-call{background:linear-gradient(135deg,#ff5722,#e64a19);box-shadow:0 3px 10px rgba(255,87,34,.4)}
+
+/* Status bar */
+.status-bar{
+  position:absolute;top:44px;left:50%;transform:translateX(-50%);
+  background:rgba(255,255,255,.5);border-radius:16px;
+  padding:4px 14px;font-size:11px;font-weight:700;color:#5a3080;
+  z-index:15;white-space:nowrap;backdrop-filter:blur(4px);
+  border:1px solid rgba(255,255,255,.6);
+  transition:opacity .3s;
+}
+
+/* Toast / message */
+.toast{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(.9);
+  background:rgba(40,10,60,.88);color:#fff;padding:12px 24px;border-radius:14px;
+  font-size:14px;font-weight:700;z-index:50;opacity:0;pointer-events:none;
+  transition:opacity .3s,transform .3s;text-align:center;max-width:80%;
+  border:2px solid rgba(255,255,255,.2);
+}
+.toast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+
+/* Reveal overlay */
+.reveal-flash{
+  position:absolute;inset:0;background:rgba(255,255,255,.6);z-index:30;
+  opacity:0;pointer-events:none;transition:opacity .15s;
+}
+.reveal-flash.flash{opacity:1}
+
+/* End overlay */
+.overlay{
+  position:absolute;inset:0;background:rgba(20,5,40,.75);
+  display:flex;align-items:center;justify-content:center;
+  z-index:40;opacity:0;pointer-events:none;transition:opacity .4s;
+  backdrop-filter:blur(6px);
+}
+.overlay.show{opacity:1;pointer-events:auto}
+
+.end-card{
+  background:linear-gradient(145deg,#f5e6ff,#e0c8f0);
+  border:2px solid #c9b3e0;border-radius:18px;
+  padding:24px 32px;text-align:center;min-width:340px;
+  box-shadow:0 12px 40px rgba(0,0,0,.3);
+  transform:scale(.9);transition:transform .4s;
+}
+.overlay.show .end-card{transform:scale(1)}
+
+.end-title{font-size:22px;font-weight:900;color:#4a2070;margin-bottom:4px}
+.end-winner{font-size:16px;color:#7a5090;margin-bottom:16px}
+.end-winner span{font-size:28px}
+
+.rank-list{margin-bottom:16px;text-align:left}
+.rank-item{
+  display:flex;align-items:center;gap:8px;padding:6px 10px;
+  border-radius:8px;margin-bottom:4px;font-size:13px;font-weight:700;color:#4a2070;
+}
+.rank-item:first-child{background:rgba(255,213,79,.3)}
+.rank-item.eliminated-rank{opacity:.5}
+.rank-num{width:20px;text-align:center;color:#8e24aa}
+.rank-emoji{font-size:18px}
+.rank-name{flex:1}
+.rank-coins{font-size:12px;color:#ff9800}
+
+.back-btn{
+  padding:10px 32px;border-radius:12px;border:none;
+  background:linear-gradient(135deg,#ab47bc,#8e24aa);
+  color:#fff;font-size:15px;font-weight:900;cursor:pointer;
+  box-shadow:0 4px 14px rgba(142,36,170,.4);
+  transition:transform .15s;
+}
+.back-btn:hover{transform:scale(1.05)}
+
+/* Round indicator */
+.round-badge{
+  position:absolute;top:48px;right:14px;
+  font-size:10px;font-weight:700;color:#7a5090;
+  background:rgba(255,255,255,.45);padding:3px 8px;border-radius:10px;
+}
+
+/* Thinking indicator */
+.thinking{
+  position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);
+  font-size:9px;color:#8e24aa;font-weight:700;
+  animation:thinkPulse 1s infinite;
+}
+@keyframes thinkPulse{0%,100%{opacity:.4}50%{opacity:1}}
+
+/* Start screen */
+.start-screen{
+  position:absolute;inset:0;z-index:25;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:linear-gradient(145deg,#e8d5f5,#d4b8e8,#c9a8df);
+}
+.start-screen.hidden{display:none}
+.start-title{font-size:32px;font-weight:900;color:#4a2070;margin-bottom:8px}
+.start-sub{font-size:14px;color:#7a5090;margin-bottom:24px}
+.start-btn{
+  padding:12px 40px;border-radius:14px;border:none;
+  background:linear-gradient(135deg,#7c4dff,#651fff);
+  color:#fff;font-size:18px;font-weight:900;cursor:pointer;
+  box-shadow:0 6px 20px rgba(124,77,255,.4);
+  transition:transform .15s;
+}
+.start-btn:hover{transform:scale(1.05)}
+
+.penalty-pill{
+  font-size:11px;font-weight:700;color:#4a2070;
+  background:rgba(255,255,255,.5);padding:2px 8px;border-radius:10px;
+}
+.penalty-pill.danger{background:rgba(255,82,82,.2);color:#c62828}
+
+.roulette-overlay{
+  position:absolute;inset:0;background:rgba(20,5,40,.85);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  z-index:60;opacity:0;pointer-events:none;transition:opacity .3s;
+}
+.roulette-overlay.show{opacity:1;pointer-events:auto}
+.roulette-title{font-size:22px;font-weight:900;color:#fff;margin-bottom:16px;text-shadow:0 2px 8px rgba(0,0,0,.4)}
+.roulette-player{font-size:14px;color:#e8d5f5;font-weight:700;margin-bottom:20px}
+.gun-wrap{width:120px;height:120px;display:flex;align-items:center;justify-content:center;margin-bottom:20px}
+.gun-icon{font-size:64px;display:block;transition:transform .3s}
+.gun-icon.spinning{animation:spinGun .08s linear infinite}
+.gun-icon.shake{animation:shakeGun .5s ease}
+@keyframes spinGun{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+@keyframes shakeGun{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+.roulette-info{font-size:12px;color:rgba(255,255,255,.7);font-weight:700;margin-bottom:12px}
+.roulette-result{
+  font-size:18px;font-weight:900;padding:10px 24px;border-radius:12px;
+  opacity:0;transform:scale(.5);transition:all .5s cubic-bezier(.34,1.56,.64,1);
+}
+.roulette-result.show{opacity:1;transform:scale(1)}
+.roulette-result.survive{background:linear-gradient(135deg,#43a047,#2e7d32);color:#fff}
+.roulette-result.dead{background:linear-gradient(135deg,#e53935,#b71c1c);color:#fff}
+</style>
+<link rel="stylesheet" href="cellar-theme.css">
+</head>
+<body>
+
+<div class="device" id="device">
+  <button class="exit-btn" onclick="location.href='/lobby-design.html'" title="返回酒庄">←</button>
+  <div class="header">
+    <div class="header-title">🎲 大话骰</div>
+    <div class="header-mode" id="modeLabel">娱乐模式</div>
+    <div class="header-coins" id="coinDisplay"></div>
+  </div>
+
+  <div class="round-badge" id="roundBadge">第 1 局</div>
+  <div class="status-bar" id="statusBar">准备开始</div>
+
+  <div class="table-area">
+    <div class="table-surface">
+      <div class="bid-display">
+        <div class="bid-label">当前叫点</div>
+        <div class="bid-value" id="bidValue">—</div>
+        <div class="bid-bidder" id="bidBidder"></div>
+        <div class="wild-hint" id="wildHint"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Players rendered by JS -->
+  <div id="playersContainer"></div>
+
+  <div class="controls hidden" id="controls">
+    <div class="ctrl-group">
+      <span class="ctrl-label">数量</span>
+      <button class="qty-btn" id="qtyMinus">−</button>
+      <span class="qty-val" id="qtyVal">1</span>
+      <button class="qty-btn" id="qtyPlus">+</button>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">点数</span>
+      <div class="face-selector" id="faceSelector"></div>
+    </div>
+    <button class="action-btn btn-bid" id="btnBid">叫</button>
+    <button class="action-btn btn-call" id="btnCall">开</button>
+  </div>
+
+  <div class="reveal-flash" id="revealFlash"></div>
+  <div class="toast" id="toast"></div>
+
+  <div class="overlay" id="endOverlay">
+    <div class="end-card">
+      <div class="end-title">🎉 游戏结束</div>
+      <div class="end-winner" id="endWinner"></div>
+      <div class="rank-list" id="rankList"></div>
+      <button class="back-btn" onclick="returnToLobby()">返回酒庄</button>
+    </div>
+  </div>
+
+  <div class="roulette-overlay" id="rouletteOverlay">
+    <div class="roulette-title">🔫 QQ弹轮盘</div>
+    <div class="roulette-player" id="roulettePlayer"></div>
+    <div class="gun-wrap"><span class="gun-icon" id="gunIcon">🔫</span></div>
+    <div class="roulette-info" id="rouletteInfo"></div>
+    <div class="roulette-result" id="rouletteResult"></div>
+  </div>
+
+  <div class="start-screen" id="startScreen">
+    <div class="start-title">🎲 大话骰</div>
+    <div class="start-sub" id="startSub">4 人对战 · QQ弹轮盘惩罚</div>
+    <button class="start-btn" id="startBtn">开始游戏</button>
+  </div>
+</div>
+
+<script>
+const DICE_FACES = ['⚀','⚁','⚂','⚃','⚄','⚅'];
+const BOT_DEFS = [
+  { name: '小狐狸bot', emoji: '🦊' },
+  { name: '布丁熊bot', emoji: '🐻' },
+  { name: '芒果鱼bot', emoji: '🐟' }
+];
+const SEATS = ['bottom', 'left', 'top', 'right'];
+const COIN_REWARD = 80;
+
+const params = new URLSearchParams(location.search);
+const humanNick = params.get('nick') || '玩家';
+const humanEmoji = params.get('emoji') || '🐭';
+const gameMode = params.get('mode') || 'fun';
+const gameName = params.get('game') || '大话骰';
+
+document.getElementById('modeLabel').textContent =
+  gameMode === 'fun' ? '娱乐模式' : gameMode === 'compete' ? '竞技模式' : '血拼模式';
+document.getElementById('startSub').textContent =
+  `${humanNick}${humanEmoji} · 4 人对战 · 每人 5 骰 2 命`;
+
+/* ─── Game State ─── */
+let players = [];
+let currentBid = null; // { qty, face, playerIdx }
+let currentTurnIdx = 0;
+let roundNum = 1;
+let gamePhase = 'idle'; // idle, rolling, bidding, revealing, ended
+let revealShown = false;
+let selectedQty = 1;
+let selectedFace = 2;
+let botTimer = null;
+
+function createPlayers() {
+  players = [
+    { name: humanNick, emoji: humanEmoji, isHuman: true, dice: [], penaltyCount: 0, eliminated: false },
+    ...BOT_DEFS.map(b => ({ ...b, isHuman: false, dice: [], penaltyCount: 0, eliminated: false }))
+  ];
+}
+
+function rollDice() {
+  for (const p of players) {
+    if (p.eliminated) { p.dice = []; continue; }
+    p.dice = Array.from({ length: 5 }, () => 1 + Math.floor(Math.random() * 6));
+  }
+}
+
+function countMatching(allDice, face) {
+  let n = 0;
+  const biddingOnOnes = face === 1;
+  for (const dice of allDice) {
+    for (const d of dice) {
+      if (biddingOnOnes) { if (d === 1) n++; }
+      else { if (d === face || d === 1) n++; }
+    }
+  }
+  return n;
+}
+
+function isValidBid(qty, face, prev) {
+  if (qty < 1 || face < 1 || face > 6) return false;
+  if (!prev) return true;
+  if (qty > prev.qty) return true;
+  if (qty === prev.qty && face > prev.face) return true;
+  return false;
+}
+
+function minRaiseQty(prev) {
+  if (!prev) return 1;
+  return prev.qty;
+}
+
+function nextActivePlayer(from) {
+  let i = from;
+  for (let step = 0; step < players.length; step++) {
+    i = (i + 1) % players.length;
+    if (!players[i].eliminated) return i;
+  }
+  return -1;
+}
+
+function activePlayerCount() {
+  return players.filter(p => !p.eliminated).length;
+}
+
+function firstActivePlayer() {
+  for (let i = 0; i < players.length; i++) {
+    if (!players[i].eliminated) return i;
+  }
+  return -1;
+}
+
+/* ─── Bot AI ─── */
+function botProbability(face) {
+  return face === 1 ? 1 / 6 : 1 / 3;
+}
+
+function botExpectedCount(playerIdx, face) {
+  const p = botProbability(face);
+  let expected = 0;
+  for (let i = 0; i < players.length; i++) {
+    if (players[i].eliminated) continue;
+    if (i === playerIdx) {
+      expected += countMatching([players[i].dice], face);
+    } else {
+      expected += players[i].dice.length * p;
+    }
+  }
+  return expected;
+}
+
+function botStdDev(hiddenCount, face) {
+  const p = botProbability(face);
+  return Math.sqrt(hiddenCount * p * (1 - p));
+}
+
+function botHiddenCount(playerIdx) {
+  let n = 0;
+  for (let i = 0; i < players.length; i++) {
+    if (i !== playerIdx && !players[i].eliminated) n += players[i].dice.length;
+  }
+  return n;
+}
+
+function botOwnMatch(playerIdx, face) {
+  return countMatching([players[playerIdx].dice], face);
+}
+
+function botChooseAction(playerIdx) {
+  const own = players[playerIdx].dice;
+  const prev = currentBid;
+
+  if (prev) {
+    const exp = botExpectedCount(playerIdx, prev.face);
+    const hidden = botHiddenCount(playerIdx);
+    const std = botStdDev(hidden, prev.face);
+    const threshold = exp + 1.5 * std;
+
+    if (prev.qty > threshold && prev.playerIdx !== playerIdx) {
+      return { action: 'call' };
+    }
+  }
+
+  const bluff = Math.random() < 0.2;
+
+  if (!prev) {
+    let bestFace = 2, bestCount = 0;
+    for (let f = 1; f <= 6; f++) {
+      const c = botOwnMatch(playerIdx, f);
+      if (c > bestCount) { bestCount = c; bestFace = f; }
+    }
+    let qty = Math.max(1, bestCount);
+    if (bluff) qty = Math.min(20, qty + 1 + Math.floor(Math.random() * 2));
+    else qty = Math.max(1, bestCount);
+    if (qty === 0) { qty = 1; bestFace = 2 + Math.floor(Math.random() * 5); }
+    return { action: 'bid', qty, face: bestFace };
+  }
+
+  const faces = [1, 2, 3, 4, 5, 6];
+  const candidates = [];
+
+  for (const f of faces) {
+    const ownMatch = botOwnMatch(playerIdx, f);
+    const exp = botExpectedCount(playerIdx, f);
+    const minQ = minRaiseQty(prev);
+    for (let q = minQ; q <= Math.min(20, Math.ceil(exp) + 2); q++) {
+      if (!isValidBid(q, f, prev)) continue;
+      if (q === prev.qty && f <= prev.face) continue;
+      const confidence = exp - q;
+      candidates.push({ qty: q, face: f, confidence, ownMatch });
+    }
+  }
+
+  if (candidates.length === 0) {
+    return { action: 'call' };
+  }
+
+  candidates.sort((a, b) => {
+    const scoreA = a.confidence + a.ownMatch * 0.5;
+    const scoreB = b.confidence + b.ownMatch * 0.5;
+    return scoreB - scoreA;
+  });
+
+  let pick;
+  if (bluff && candidates.length > 1) {
+    const aggressive = candidates.filter(c => c.qty >= (prev ? prev.qty + 1 : 1));
+    pick = aggressive.length ? aggressive[aggressive.length - 1] : candidates[0];
+  } else {
+    pick = candidates[0];
+  }
+
+  if (pick.confidence < -2 && prev && prev.playerIdx !== playerIdx) {
+    return { action: 'call' };
+  }
+
+  return { action: 'bid', qty: pick.qty, face: pick.face };
+}
+
+/* ─── UI ─── */
+function faceLabel(face) {
+  return `<span class="die-icon">${DICE_FACES[face - 1]}</span> ${face}${face === 1 ? '(纯)' : ''}`;
+}
+
+function renderPlayers() {
+  const container = document.getElementById('playersContainer');
+  container.innerHTML = '';
+  players.forEach((p, i) => {
+    const el = document.createElement('div');
+    el.className = `player player-${SEATS[i]}${p.eliminated ? ' eliminated' : ''}${currentTurnIdx === i && gamePhase === 'bidding' ? ' active-turn' : ''}`;
+    el.id = `player-${i}`;
+
+    const livesHtml = `<span class="penalty-pill${p.penaltyCount >= 2 ? ' danger' : ''}">🔫 ${p.penaltyCount}次</span>`;
+
+    const showDice = p.isHuman || revealShown;
+    const cupHidden = !showDice && p.dice.length > 0;
+
+    let diceHtml = '';
+    if (p.dice.length > 0) {
+      diceHtml = p.dice.map((d, di) => {
+        const cls = p.isHuman ? 'die human-die' : 'die';
+        return `<span class="${cls}" data-di="${di}">${DICE_FACES[d - 1]}</span>`;
+      }).join('');
+    }
+
+    el.innerHTML = `
+      <div class="player-card">
+        <div class="player-info">
+          <span class="player-emoji">${p.emoji}</span>
+          <span class="player-name">${p.name}</span>
+        </div>
+        <div class="player-lives">${livesHtml}</div>
+        <div class="cup-area" id="cupArea-${i}">
+          ${cupHidden ? '<div class="cup hidden-dice" id="cup-' + i + '"><span class="cup-icon">🥤</span></div>' : ''}
+          <div class="dice-row" id="diceRow-${i}">${diceHtml}</div>
+        </div>
+      </div>
+    `;
+    container.appendChild(el);
+  });
+}
+
+function updateBidDisplay() {
+  const valEl = document.getElementById('bidValue');
+  const bidderEl = document.getElementById('bidBidder');
+  const wildEl = document.getElementById('wildHint');
+
+  if (!currentBid) {
+    valEl.innerHTML = '—';
+    bidderEl.textContent = '';
+    wildEl.textContent = '';
+    return;
+  }
+  valEl.innerHTML = `${currentBid.qty} 个 ${faceLabel(currentBid.face)}`;
+  bidderEl.textContent = `${players[currentBid.playerIdx].emoji} ${players[currentBid.playerIdx].name}`;
+  wildEl.textContent = currentBid.face === 1 ? '叫 1 时不计万能骰' : '1 为万能骰 ⚀';
+}
+
+function updateControls() {
+  const ctrl = document.getElementById('controls');
+  const isHumanTurn = gamePhase === 'bidding' && players[currentTurnIdx]?.isHuman && !players[currentTurnIdx]?.eliminated;
+  ctrl.classList.toggle('hidden', !isHumanTurn);
+
+  if (!isHumanTurn) return;
+
+  document.getElementById('qtyVal').textContent = selectedQty;
+  document.getElementById('btnCall').disabled = !currentBid;
+
+  const prev = currentBid;
+  const minQ = prev ? (prev.qty + (selectedFace <= (prev.face || 0) ? 1 : 0)) : 1;
+  if (prev && selectedFace > prev.face && selectedQty === prev.qty) {
+    // valid same qty higher face
+  } else if (prev && selectedQty <= prev.qty && selectedFace <= prev.face) {
+    if (selectedQty < prev.qty + 1) selectedQty = prev.qty + 1;
+  }
+  if (selectedQty < 1) selectedQty = 1;
+  document.getElementById('qtyVal').textContent = selectedQty;
+
+  document.querySelectorAll('.face-btn').forEach(btn => {
+    btn.classList.toggle('selected', parseInt(btn.dataset.face) === selectedFace);
+  });
+}
+
+function buildFaceSelector() {
+  const sel = document.getElementById('faceSelector');
+  sel.innerHTML = '';
+  for (let f = 1; f <= 6; f++) {
+    const btn = document.createElement('button');
+    btn.className = 'face-btn' + (f === selectedFace ? ' selected' : '');
+    btn.dataset.face = f;
+    btn.textContent = DICE_FACES[f - 1];
+    btn.onclick = () => { selectedFace = f; updateControls(); };
+    sel.appendChild(btn);
+  }
+}
+
+function setStatus(msg) {
+  document.getElementById('statusBar').textContent = msg;
+}
+
+function showToast(msg, dur = 2000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
+}
+
+function refreshUI() {
+  renderPlayers();
+  updateBidDisplay();
+  updateControls();
+  document.getElementById('roundBadge').textContent = `第 ${roundNum} 局`;
+}
+
+/* ─── Game Flow ─── */
+function startRound(starterIdx) {
+  gamePhase = 'rolling';
+  revealShown = false;
+  currentBid = null;
+  rollDice();
+  refreshUI();
+
+  selectedQty = 1;
+  selectedFace = 2;
+
+  let starter = starterIdx;
+  if (starter < 0 || players[starter]?.eliminated) starter = firstActivePlayer();
+  currentTurnIdx = starter;
+
+  gamePhase = 'bidding';
+  setStatus(`${players[currentTurnIdx].name} 先叫`);
+  refreshUI();
+
+  if (!players[currentTurnIdx].isHuman) scheduleBotTurn();
+}
+
+function startGame() {
+  document.getElementById('startScreen').classList.add('hidden');
+  createPlayers();
+  roundNum = 1;
+  currentTurnIdx = firstActivePlayer();
+  startRound(currentTurnIdx);
+}
+
+function placeBid(playerIdx, qty, face) {
+  if (!isValidBid(qty, face, currentBid)) return false;
+  currentBid = { qty, face, playerIdx };
+  setStatus(`${players[playerIdx].name} 叫 ${qty} 个 ${face} 点`);
+  refreshUI();
+  return true;
+}
+
+function advanceTurn() {
+  const next = nextActivePlayer(currentTurnIdx);
+  if (next < 0) return;
+  currentTurnIdx = next;
+  setStatus(`轮到 ${players[currentTurnIdx].name}`);
+  refreshUI();
+  if (!players[currentTurnIdx].isHuman) scheduleBotTurn();
+}
+
+function scheduleBotTurn() {
+  clearTimeout(botTimer);
+  const delay = 1000 + Math.random() * 1000;
+  const idx = currentTurnIdx;
+
+  const el = document.getElementById(`player-${idx}`);
+  if (el) {
+    const think = document.createElement('div');
+    think.className = 'thinking';
+    think.textContent = '思考中…';
+    think.id = 'thinking-' + idx;
+    el.querySelector('.player-card').appendChild(think);
+  }
+
+  botTimer = setTimeout(() => {
+    const thinkEl = document.getElementById('thinking-' + idx);
+    if (thinkEl) thinkEl.remove();
+    if (gamePhase !== 'bidding' || currentTurnIdx !== idx) return;
+    executeBotTurn(idx);
+  }, delay);
+}
+
+function executeBotTurn(idx) {
+  const action = botChooseAction(idx);
+  if (action.action === 'call') {
+    resolveChallenge(idx);
+  } else {
+    if (placeBid(idx, action.qty, action.face)) {
+      advanceTurn();
+    } else {
+      resolveChallenge(idx);
+    }
+  }
+}
+
+function humanBid() {
+  if (gamePhase !== 'bidding' || !players[currentTurnIdx].isHuman) return;
+  if (!isValidBid(selectedQty, selectedFace, currentBid)) {
+    showToast('叫点不合法，需加价或升点');
+    return;
+  }
+  placeBid(currentTurnIdx, selectedQty, selectedFace);
+  advanceTurn();
+}
+
+function humanCall() {
+  if (gamePhase !== 'bidding' || !players[currentTurnIdx].isHuman) return;
+  if (!currentBid) { showToast('还没有人叫点'); return; }
+  resolveChallenge(currentTurnIdx);
+}
+
+function resolveChallenge(challengerIdx) {
+  clearTimeout(botTimer);
+  gamePhase = 'revealing';
+  revealShown = false;
+  document.getElementById('controls').classList.add('hidden');
+
+  const bidderIdx = currentBid.playerIdx;
+  const { qty, face } = currentBid;
+
+  showToast(`${players[challengerIdx].name} 开！`, 1500);
+  setStatus('开盅验骰…');
+
+  refreshUI();
+
+  setTimeout(() => {
+    document.getElementById('revealFlash').classList.add('flash');
+    setTimeout(() => document.getElementById('revealFlash').classList.remove('flash'), 200);
+
+    for (let i = 0; i < players.length; i++) {
+      const cup = document.getElementById('cup-' + i);
+      if (cup) cup.classList.add('revealing');
+    }
+
+    setTimeout(() => {
+      revealShown = true;
+      renderPlayers();
+      for (let i = 0; i < players.length; i++) {
+        const row = document.getElementById('diceRow-' + i);
+        if (!row) continue;
+        row.querySelectorAll('.die').forEach((d, di) => {
+          setTimeout(() => d.classList.add('reveal-anim'), di * 80);
+        });
+      }
+
+      setTimeout(() => {
+        const actual = countMatching(
+          players.filter(p => p.dice.length).map(p => p.dice),
+          face
+        );
+        const bidSuccess = actual >= qty;
+
+        let loserIdx;
+        if (bidSuccess) {
+          loserIdx = challengerIdx;
+          showToast(`实际 ${actual} 个 ≥ ${qty}，${players[challengerIdx].name} 输了！`, 2500);
+        } else {
+          loserIdx = bidderIdx;
+          showToast(`实际 ${actual} 个 < ${qty}，${players[bidderIdx].name} 吹牛失败！`, 2500);
+        }
+
+        refreshUI();
+
+        setTimeout(() => {
+          doWaterGunRoulette(loserIdx, () => {
+            if (activePlayerCount() <= 1) {
+              endGame();
+            } else {
+              roundNum++;
+              startRound(loserIdx >= 0 && !players[loserIdx].eliminated ? loserIdx :
+                nextActivePlayer(loserIdx));
+            }
+          });
+        }, 1200);
+      }, 900);
+    }, 600);
+  }, 800);
+}
+
+function doWaterGunRoulette(victimIdx, callback) {
+  const p = players[victimIdx];
+  p.penaltyCount++;
+  const hit = Math.random() < 1/3;
+
+  const overlay = document.getElementById('rouletteOverlay');
+  const gunIcon = document.getElementById('gunIcon');
+  const resultEl = document.getElementById('rouletteResult');
+  document.getElementById('roulettePlayer').textContent = `${p.emoji} ${p.name} 扣动扳机...`;
+  document.getElementById('rouletteInfo').textContent = `第 ${p.penaltyCount} 次开枪（1/3 概率中弹）`;
+  resultEl.className = 'roulette-result';
+  resultEl.textContent = '';
+  overlay.classList.add('show');
+
+  gunIcon.classList.add('spinning');
+  setTimeout(() => {
+    gunIcon.classList.remove('spinning');
+    gunIcon.classList.add('shake');
+    setTimeout(() => {
+      gunIcon.classList.remove('shake');
+      if (hit) {
+        resultEl.textContent = '🍇💥 葡萄汁爆射！出局！';
+        resultEl.classList.add('dead', 'show');
+        p.eliminated = true;
+        showToast(`${p.name} 被淘汰！`, 2000);
+      } else {
+        resultEl.textContent = '💨 空弹！安全继续';
+        resultEl.classList.add('survive', 'show');
+      }
+      refreshUI();
+
+      setTimeout(() => {
+        overlay.classList.remove('show');
+        resultEl.classList.remove('show', 'dead', 'survive');
+        callback();
+      }, 2000);
+    }, 800);
+  }, 1500);
+}
+
+function endGame() {
+  gamePhase = 'ended';
+  const alive = players.filter(p => !p.eliminated);
+  const winner = alive[0] || players[0];
+
+  const ranked = [...players].sort((a, b) => {
+    if (a.eliminated !== b.eliminated) return a.eliminated ? 1 : -1;
+    return a.penaltyCount - b.penaltyCount;
+  });
+
+  document.getElementById('endWinner').innerHTML =
+    `冠军：<span>${winner.emoji}</span> ${winner.name}`;
+
+  const rankList = document.getElementById('rankList');
+  rankList.innerHTML = ranked.map((p, i) => {
+    const coins = (i === 0 && gameMode === 'fun') ? `+${COIN_REWARD} 🪙` : '';
+    return `<div class="rank-item${p.eliminated ? ' eliminated-rank' : ''}">
+      <span class="rank-num">${i + 1}</span>
+      <span class="rank-emoji">${p.emoji}</span>
+      <span class="rank-name">${p.name}</span>
+      <span class="rank-coins">${coins}</span>
+    </div>`;
+  }).join('');
+
+  if (gameMode === 'fun' && winner.isHuman) {
+    document.getElementById('coinDisplay').textContent = `🪙 +${COIN_REWARD}`;
+  }
+
+  document.getElementById('endOverlay').classList.add('show');
+}
+
+/* ─── Controls wiring ─── */
+document.getElementById('qtyMinus').onclick = () => {
+  const prev = currentBid;
+  let minQ = 1;
+  if (prev) {
+    if (selectedFace > prev.face) minQ = prev.qty;
+    else minQ = prev.qty + 1;
+  }
+  selectedQty = Math.max(minQ, selectedQty - 1);
+  updateControls();
+};
+document.getElementById('qtyPlus').onclick = () => {
+  selectedQty = Math.min(20, selectedQty + 1);
+  updateControls();
+};
+document.getElementById('btnBid').onclick = humanBid;
+document.getElementById('btnCall').onclick = humanCall;
+document.getElementById('startBtn').onclick = startGame;
+
+buildFaceSelector();
+function returnToLobby(){
+  const ranked = [...players].sort((a, b) => {
+    if (a.eliminated !== b.eliminated) return a.eliminated ? 1 : -1;
+    return a.penaltyCount - b.penaltyCount;
+  });
+  const humanPlace = ranked.findIndex(p => p.isHuman) + 1;
+  cellarSettlement(humanPlace, players.length, '大话骰');
+}
+
+createPlayers();
+refreshUI();
+
+function fitDevice() {
+  const d = document.getElementById('device');
+  const s = Math.min(window.innerWidth / 960, window.innerHeight / 540);
+  d.style.transform = `scale(${s})`;
+}
+window.addEventListener('resize', fitDevice);
+window.addEventListener('orientationchange', () => setTimeout(fitDevice, 200));
+fitDevice();
+</script>
+<script src="cellar-roulette.js"></script>
+</body>
+</html>
